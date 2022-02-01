@@ -4708,6 +4708,39 @@ ERST
 
 DEFHEADING()
 
+#ifdef CONFIG_FEAR5
+DEFHEADING(Mutation testing:)
+
+DEF("mutant-list", HAS_ARG, QEMU_OPTION_mutantlist,
+    "-mutant-list <file>\n"
+    "                list of mutants to simulate\n",
+    QEMU_ARCH_RISCV)
+SRST
+``-mutant-list file``
+    Mutant list.
+ERST
+
+DEF("test-report", HAS_ARG, QEMU_OPTION_testreport,
+    "-test-report <file>\n"
+    "                log test results to file\n",
+    QEMU_ARCH_RISCV)
+SRST
+``-test-report file``
+    Mutation test results will go here.
+ERST
+
+DEF("test-setup", HAS_ARG, QEMU_OPTION_testsetup,
+    "-test-setup <file>\n"
+    "                mutation test setup (e.g. monitors/stimulators)\n",
+    QEMU_ARCH_RISCV)
+SRST
+``-test-setup file``
+    Mutation test setup file.
+ERST
+
+DEFHEADING()
+#endif
+
 DEFHEADING(Generic object creation:)
 
 DEF("object", HAS_ARG, QEMU_OPTION_object,

@@ -129,6 +129,12 @@
 
 #include "config-host.h"
 
+#ifdef CONFIG_FEAR5
+#include "fear5/faultinjection.h"
+#include "fear5/logger.h"
+#include "fear5/parser.h"
+#endif
+
 #define MAX_VIRTIO_CONSOLES 1
 
 typedef struct BlockdevOptionsQueueEntry {
@@ -2769,6 +2775,12 @@ void qmp_x_exit_preconfig(Error **errp)
 
 void qemu_init(int argc, char **argv, char **envp)
 {
+#ifdef CONFIG_FEAR5
+#ifdef FEAR5_TIME_MEASUREMENT
+    fear5_printtime("qemu_init");
+#endif
+#endif
+
     QemuOpts *opts;
     QemuOpts *icount_opts = NULL, *accel_opts = NULL;
     QemuOptsList *olist;
@@ -3658,6 +3670,22 @@ void qemu_init(int argc, char **argv, char **envp)
             case QEMU_OPTION_nouserconfig:
                 /* Nothing to be parsed here. Especially, do not error out below. */
                 break;
+#ifdef CONFIG_FEAR5
+            case QEMU_OPTION_mutantlist:
+                /* To Do: Run the configuration parser here... */
+                if (mutantlist_load(optarg)) {
+                    error_report("open %s failed!", optarg);
+                    exit(1);
+                }
+                break;
+            case QEMU_OPTION_testreport:
+                printf("Test results are written to '%s'\n", optarg);
+                fi_set_logfile(optarg);
+                break;
+            case QEMU_OPTION_testsetup:
+                testsetup_load(optarg);
+                break;
+#endif                
             default:
                 if (os_parse_cmd_args(popt->index, optarg)) {
                     error_report("Option not supported in this build");
