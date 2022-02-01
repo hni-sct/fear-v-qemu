@@ -241,6 +241,30 @@ static void sifive_plic_reset(DeviceState *dev)
     SiFivePLICState *s = SIFIVE_PLIC(dev);
     int i;
 
+#ifdef CONFIG_FEAR5
+    /* Reset to SiFive E300 initial values */
+    s->num_addrs = 1;
+    s->num_harts = 1;
+    s->bitfield_words = 4;
+    s->num_enables = 4;
+    s->hartid_base = 0;
+    s->num_sources = 127;
+    s->num_priorities = 7;
+    s->priority_base = 4;
+    s->pending_base = 4096;
+    s->enable_base = 8192;
+    s->enable_stride = 128;
+    s->context_base = 2097152;
+    s->context_stride = 4096;
+    s->aperture_size = 67108864;
+    s->addr_config->addrid = 0;
+    s->addr_config->hartid = 0;
+    s->addr_config->mode = PLICMode_M;
+
+    g_free(s->hart_config);
+    s->hart_config = g_strdup("M");
+#endif    
+
     memset(s->source_priority, 0, sizeof(uint32_t) * s->num_sources);
     memset(s->target_priority, 0, sizeof(uint32_t) * s->num_addrs);
     memset(s->pending, 0, sizeof(uint32_t) * s->bitfield_words);
@@ -251,6 +275,10 @@ static void sifive_plic_reset(DeviceState *dev)
         qemu_set_irq(s->m_external_irqs[i], 0);
         qemu_set_irq(s->s_external_irqs[i], 0);
     }
+
+#ifdef CONFIG_FEAR5
+    //printf("DONE: SIFIVE PLIC RESET...\n");
+#endif
 }
 
 /*
@@ -467,5 +495,47 @@ DeviceState *sifive_plic_create(hwaddr addr, char *hart_config,
         }
     }
 
+#ifdef CONFIG_FEAR5
+    /* Output initial values */
+    /*
+    SiFivePLICState *s = SIFIVE_PLIC(dev);
+    printf("s->num_addrs = %u;\n", s->num_addrs);
+    printf("s->num_harts = %u;\n", s->num_harts);
+    printf("s->bitfield_words = %u;\n", s->bitfield_words);
+    printf("s->num_enables = %u;\n", s->num_enables);
+    printf("s->hartid_base = %u;\n", s->hartid_base);
+    printf("s->num_sources = %u;\n", s->num_sources);
+    printf("s->num_priorities = %u;\n", s->num_priorities);
+    printf("s->priority_base = %u;\n", s->priority_base);
+    printf("s->pending_base = %u;\n", s->pending_base);
+    printf("s->enable_base = %u;\n", s->enable_base);
+    printf("s->enable_stride = %u;\n", s->enable_stride);
+    printf("s->context_base = %u;\n", s->context_base);
+    printf("s->context_stride = %u;\n", s->context_stride);
+    printf("s->aperture_size = %u;\n", s->aperture_size);
+
+    printf("s->addr_config->addrid = %u;\n", s->addr_config->addrid);
+    printf("s->addr_config->hartid = %u;\n", s->addr_config->hartid);
+    printf("s->addr_config->mode = %u;\n", s->addr_config->mode);
+
+    for (int i = 0; i < s->num_sources; i++) {
+        printf("  source_priority[%d]: %u\n", i, s->source_priority[i]);
+    }
+    for (int i = 0; i < s->num_addrs; i++) {
+        printf("  target_priority[%d]: %u\n", i, s->target_priority[i]);
+    }
+    for (int i = 0; i < s->bitfield_words; i++) {
+        printf("  pending[%d]: %u\n", i, s->pending[i]);
+    }
+    for (int i = 0; i < s->bitfield_words; i++) {
+        printf("  claimed[%d]: %u\n", i, s->claimed[i]);
+    }
+    for (int i = 0; i < s->num_enables; i++) {
+        printf("  enable[%d]: %u\n", i, s->enable[i]);
+    }
+
+    printf("s->hart_config = %s;\n", s->hart_config);
+    */
+#endif
     return dev;
 }
