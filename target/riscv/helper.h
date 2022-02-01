@@ -1110,3 +1110,10 @@ DEF_HELPER_5(divu_i128, tl, env, tl, tl, tl, tl)
 DEF_HELPER_5(divs_i128, tl, env, tl, tl, tl, tl)
 DEF_HELPER_5(remu_i128, tl, env, tl, tl, tl, tl)
 DEF_HELPER_5(rems_i128, tl, env, tl, tl, tl, tl)
+
+#ifdef CONFIG_FEAR5
+/* Fault Effect Analysis for RISC-V (FEAR5) */
+DEF_HELPER_2(f5_trace_load, void, tl, tl)
+DEF_HELPER_2(f5_trace_store, void, tl, tl)
+DEF_HELPER_3(f5_trace_mem_filter, void, tl, tl, tl)
+#endif

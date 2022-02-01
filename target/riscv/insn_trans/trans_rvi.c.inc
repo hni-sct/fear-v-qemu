@@ -228,6 +228,23 @@ static bool gen_load_tl(DisasContext *ctx, arg_lb *a, MemOp memop)
     TCGv dest = dest_gpr(ctx, a->rd);
     TCGv addr = get_address(ctx, a->rs1, a->imm);
 
+#ifdef CONFIG_FEAR5
+    /*
+      - Record memory address "cpu_gpr[a->rs1] + a->imm"
+      - This memory access can be filtered during mutant generation
+        if the mutated address is invalid.
+    */
+    TCGv idx = tcg_const_tl(a->rs1);
+    TCGv base = cpu_gpr[a->rs1];
+    TCGv offset = tcg_const_tl(a->imm);
+    if (qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN)) {
+        gen_helper_f5_trace_mem_filter(idx, base, offset);
+    }
+    gen_helper_f5_trace_load(base, offset);
+    tcg_temp_free(idx);
+    tcg_temp_free(offset);
+#endif
+
     tcg_gen_qemu_ld_tl(dest, addr, ctx->mem_idx, memop);
     gen_set_gpr(ctx, a->rd, dest);
     return true;
@@ -325,6 +342,23 @@ static bool gen_store_tl(DisasContext *ctx, arg_sb *a, MemOp memop)
 {
     TCGv addr = get_address(ctx, a->rs1, a->imm);
     TCGv data = get_gpr(ctx, a->rs2, EXT_NONE);
+
+#ifdef CONFIG_FEAR5
+    /*
+      - Record memory address "cpu_gpr[a->rs1] + a->imm"
+      - This memory access can be filtered during mutant generation
+        if the mutated address is invalid.
+    */
+    TCGv idx = tcg_const_tl(a->rs1);
+    TCGv base = cpu_gpr[a->rs1];
+    TCGv offset = tcg_const_tl(a->imm);
+    if (qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN)) {
+        gen_helper_f5_trace_mem_filter(idx, base, offset);
+    }
+    gen_helper_f5_trace_store(base, offset);
+    tcg_temp_free(idx);
+    tcg_temp_free(offset);
+#endif
 
     tcg_gen_qemu_st_tl(data, addr, ctx->mem_idx, memop);
     return true;

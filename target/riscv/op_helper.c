@@ -22,6 +22,9 @@
 #include "qemu/main-loop.h"
 #include "exec/exec-all.h"
 #include "exec/helper-proto.h"
+#ifdef CONFIG_FEAR5
+#include "fear5/faultinjection.h"
+#endif
 
 /* Exceptions processing helpers */
 void QEMU_NORETURN riscv_raise_exception(CPURISCVState *env,
@@ -291,5 +294,41 @@ target_ulong helper_hyp_hlvx_wu(CPURISCVState *env, target_ulong address)
 
     return cpu_ldl_mmuidx_ra(env, address, mmu_idx, GETPC());
 }
+
+#ifdef CONFIG_FEAR5
+void helper_f5_trace_load(target_ulong base, target_ulong offset)
+{
+    target_ulong address = base + offset;
+
+    /* Update load counter */
+    MemAccessStatistics *mem = g_hash_table_lookup(mem_access, GUINT_TO_POINTER(address));
+    if (mem == NULL) {
+        mem = g_new0(MemAccessStatistics, 1);
+        g_hash_table_insert(mem_access, GUINT_TO_POINTER(address), mem);
+    }
+    mem->reads = mem->reads + 1;
+}
+
+void helper_f5_trace_store(target_ulong base, target_ulong offset)
+{
+    target_ulong address = base + offset;
+
+    /* Update store counter */
+    MemAccessStatistics *mem = g_hash_table_lookup(mem_access, GUINT_TO_POINTER(address));
+    if (mem == NULL) {
+        mem = g_new0(MemAccessStatistics, 1);
+        g_hash_table_insert(mem_access, GUINT_TO_POINTER(address), mem);
+    }
+    mem->writes = mem->writes + 1;
+}
+
+void helper_f5_trace_mem_filter(target_ulong idx, target_ulong base, target_ulong offset)
+{
+    /* Records the address-containing GPRs of any Load/Store instruction */
+    // if (qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN)) {
+    //     qemu_log("LD/ST for GPR %u (Access %" PRIu64 "): [" TARGET_FMT_lx " + %d]\n", idx, gpr_reads[idx], base, (int) offset);
+    // }
+}
+#endif
 
 #endif /* !CONFIG_USER_ONLY */
