@@ -296,6 +296,16 @@ target_ulong helper_hyp_hlvx_wu(CPURISCVState *env, target_ulong address)
 }
 
 #ifdef CONFIG_FEAR5
+void helper_f5_trace_gpr_read(target_ulong idx)
+{
+    gpr_reads[idx]++;
+}
+
+void helper_f5_trace_gpr_write(target_ulong idx)
+{
+    gpr_writes[idx]++;
+}
+
 void helper_f5_trace_load(target_ulong base, target_ulong offset)
 {
     target_ulong address = base + offset;

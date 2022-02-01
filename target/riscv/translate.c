@@ -43,6 +43,10 @@ static TCGv pm_base;
 
 #include "exec/gen-icount.h"
 
+#ifdef CONFIG_FEAR5
+#include "fear5/faultinjection.h"
+#endif
+
 /*
  * If an operation is being performed on less than TARGET_LONG_BITS,
  * it may require the inputs to be sign- or zero-extended; which will
@@ -263,6 +267,15 @@ static TCGv temp_new(DisasContext *ctx)
     return ctx->temp[ctx->ntemp++] = tcg_temp_new();
 }
 
+static void _f5_trace_gpr_read(int reg_num)
+{
+#ifdef CONFIG_FEAR5
+    TCGv idx = tcg_const_tl(reg_num);
+    gen_helper_f5_trace_gpr_read(idx);
+    tcg_temp_free(idx);
+#endif
+}
+
 static TCGv get_gpr(DisasContext *ctx, int reg_num, DisasExtend ext)
 {
     TCGv t;
@@ -271,6 +284,7 @@ static TCGv get_gpr(DisasContext *ctx, int reg_num, DisasExtend ext)
         return ctx->zero;
     }
 
+    _f5_trace_gpr_read(reg_num);
     switch (get_ol(ctx)) {
     case MXL_RV32:
         switch (ext) {
@@ -303,6 +317,8 @@ static TCGv get_gprh(DisasContext *ctx, int reg_num)
     if (reg_num == 0) {
         return ctx->zero;
     }
+
+    _f5_trace_gpr_read(reg_num);
     return cpu_gprh[reg_num];
 }
 
@@ -322,9 +338,19 @@ static TCGv dest_gprh(DisasContext *ctx, int reg_num)
     return cpu_gprh[reg_num];
 }
 
+static void _f5_trace_gpr_write(int reg_num)
+{
+#ifdef CONFIG_FEAR5
+    TCGv idx = tcg_const_tl(reg_num);
+    gen_helper_f5_trace_gpr_write(idx);
+    tcg_temp_free(idx);
+#endif
+}
+
 static void gen_set_gpr(DisasContext *ctx, int reg_num, TCGv t)
 {
     if (reg_num != 0) {
+        _f5_trace_gpr_write(reg_num);
         switch (get_ol(ctx)) {
         case MXL_RV32:
             tcg_gen_ext32s_tl(cpu_gpr[reg_num], t);
@@ -346,6 +372,7 @@ static void gen_set_gpr(DisasContext *ctx, int reg_num, TCGv t)
 static void gen_set_gpri(DisasContext *ctx, int reg_num, target_long imm)
 {
     if (reg_num != 0) {
+        _f5_trace_gpr_write(reg_num);
         switch (get_ol(ctx)) {
         case MXL_RV32:
             tcg_gen_movi_tl(cpu_gpr[reg_num], (int32_t)imm);
@@ -368,6 +395,7 @@ static void gen_set_gpr128(DisasContext *ctx, int reg_num, TCGv rl, TCGv rh)
 {
     assert(get_ol(ctx) == MXL_RV128);
     if (reg_num != 0) {
+        _f5_trace_gpr_write(reg_num);
         tcg_gen_mov_tl(cpu_gpr[reg_num], rl);
         tcg_gen_mov_tl(cpu_gprh[reg_num], rh);
     }
