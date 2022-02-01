@@ -248,10 +248,29 @@ static void riscv_aclint_mtimer_realize(DeviceState *dev, Error **errp)
     }
 }
 
+#ifdef CONFIG_FEAR5
+static void riscv_aclint_mtimer_reset(DeviceState *dev)
+{
+    RISCVAclintMTimerState *s = RISCV_ACLINT_MTIMER(dev);
+
+    s->hartid_base = 0;
+    s->num_harts = 1;
+    s->timecmp_base = 0;
+    s->time_base = 32760;
+    s->aperture_size = 32768;
+    s->timebase_freq = 10000000;
+
+    //printf("DONE: RISCV ACLINT MTIMER RESET...\n");
+}
+#endif
+
 static void riscv_aclint_mtimer_class_init(ObjectClass *klass, void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
     dc->realize = riscv_aclint_mtimer_realize;
+#ifdef CONFIG_FEAR5
+    dc->reset = riscv_aclint_mtimer_reset;
+#endif    
     device_class_set_props(dc, riscv_aclint_mtimer_properties);
 }
 
@@ -312,6 +331,18 @@ DeviceState *riscv_aclint_mtimer_create(hwaddr addr, hwaddr size,
                               qdev_get_gpio_in(DEVICE(rvcpu), IRQ_M_TIMER));
     }
 
+#ifdef CONFIG_FEAR5
+    /* Output initial values */
+    /*
+    RISCVAclintMTimerState *s = RISCV_ACLINT_MTIMER(dev);
+    printf("s->hartid_base = %u;\n", s->hartid_base);
+    printf("s->num_harts = %u;\n", s->num_harts);
+    printf("s->timecmp_base = %u;\n", s->timecmp_base);
+    printf("s->time_base = %u;\n", s->time_base);
+    printf("s->aperture_size = %u;\n", s->aperture_size);
+    printf("s->timebase_freq = %u;\n", s->timebase_freq);
+    */
+#endif
     return dev;
 }
 
@@ -407,10 +438,26 @@ static void riscv_aclint_swi_realize(DeviceState *dev, Error **errp)
     }
 }
 
+#ifdef CONFIG_FEAR5
+static void riscv_aclint_swi_reset(DeviceState *dev)
+{
+    RISCVAclintSwiState *s = RISCV_ACLINT_SWI(dev);
+
+    s->hartid_base = 0;
+    s->num_harts = 1;
+    s->sswi = 0;
+    
+    //printf("DONE: RISCV ACLINT SWI RESET...\n");
+}
+#endif
+
 static void riscv_aclint_swi_class_init(ObjectClass *klass, void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
     dc->realize = riscv_aclint_swi_realize;
+#ifdef CONFIG_FEAR5
+    dc->reset = riscv_aclint_swi_reset;
+#endif
     device_class_set_props(dc, riscv_aclint_swi_properties);
 }
 
@@ -448,6 +495,15 @@ DeviceState *riscv_aclint_swi_create(hwaddr addr, uint32_t hartid_base,
                                   (sswi) ? IRQ_S_SOFT : IRQ_M_SOFT));
     }
 
+#ifdef CONFIG_FEAR5
+    /* Output initial values */
+    /*
+    RISCVAclintSwiState *s = RISCV_ACLINT_SWI(dev);
+    printf("s->hartid_base = %u;\n", s->hartid_base);
+    printf("s->num_harts = %u;\n", s->num_harts);
+    printf("s->sswi = %u;\n", s->sswi);
+    */
+#endif
     return dev;
 }
 
