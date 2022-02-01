@@ -332,6 +332,10 @@ const QEMULogItem qemu_log_items[] = {
 #ifdef CONFIG_PLUGIN
     { CPU_LOG_PLUGIN, "plugin", "output from TCG plugins\n"},
 #endif
+#ifdef CONFIG_FEAR5
+    { FEAR5_LOG_GOLDENRUN, "goldenrun",
+      "log instruction execution and register access statistics\n"},
+#endif
     { LOG_STRACE, "strace",
       "log every user-mode syscall, its input, and its result" },
     { 0, NULL, NULL },
