@@ -356,6 +356,7 @@ ninja=""
 gio="$default_feature"
 skip_meson=no
 slirp_smbd="$default_feature"
+fear5="yes"
 
 # The following Meson options are handled manually (still they
 # are included in the automatically generated help message)
@@ -1145,6 +1146,12 @@ for opt do
   ;;
   --disable-plugins) plugins="no"
   ;;
+  --enable-fear5)
+    fear5="yes" ;
+    libxml2="yes" ;
+  ;;
+  --disable-fear5) fear5="no"
+  ;;
   --enable-containers) use_containers="yes"
   ;;
   --disable-containers) use_containers="no"
@@ -1390,6 +1397,7 @@ Advanced options (experts only):
                            enable plugins via shared library loading
   --disable-containers     don't use containers for cross-building
   --gdb=GDB-path           gdb to use for gdbstub tests [$gdb_bin]
+  --enable-fear5           fault effect analysis for RISC-V support
 EOF
   meson_options_help
 cat << EOF
@@ -3548,6 +3556,10 @@ fi
 
 if test "$plugins" = "yes" ; then
     echo "CONFIG_PLUGIN=y" >> $config_host_mak
+fi
+
+if test "$fear5" = "yes" ; then
+  echo "CONFIG_FEAR5=y" >> $config_host_mak
 fi
 
 if test -n "$gdb_bin"; then

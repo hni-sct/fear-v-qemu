@@ -2571,7 +2571,6 @@ subdir('authz')
 subdir('crypto')
 subdir('ui')
 
-
 if enable_modules
   libmodulecommon = static_library('module-common', files('module-common.c') + genh, pic: true, c_args: '-DBUILD_DSO')
   modulecommon = declare_dependency(link_whole: libmodulecommon, compile_args: '-DBUILD_DSO')
@@ -2593,6 +2592,8 @@ if have_system or have_user
                          arguments: ['@INPUT@', '@EXTRA_ARGS@', '-o', '@OUTPUT@'])
   subdir('libdecnumber')
   subdir('target')
+  # NOTE: this should be conditional (depending on have_system and only if fear5 and riscv targets are enabled)
+  subdir('fear5')
 endif
 
 subdir('audio')
@@ -3500,6 +3501,7 @@ summary_info += {'libudev':           libudev}
 # Dummy dependency, keep .found()
 summary_info += {'FUSE lseek':        fuse_lseek.found()}
 summary_info += {'selinux':           selinux}
+summary_info += {'fear5 support':     config_host.has_key('CONFIG_FEAR5')}
 summary(summary_info, bool_yn: true, section: 'Dependencies')
 
 if not supported_cpus.contains(cpu)
