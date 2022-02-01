@@ -97,11 +97,34 @@ static void sifive_e_prci_init(Object *obj)
     s->plloutdiv = SIFIVE_E_PRCI_PLLOUTDIV_DIV1;
 }
 
+#ifdef CONFIG_FEAR5
+static void sifive_e_prci_reset(DeviceState *dev)
+{
+    SiFiveEPRCIState *s = SIFIVE_E_PRCI(dev);
+
+    s->hfrosccfg = 3221225472;
+    s->hfxosccfg = 3221225472;
+    s->pllcfg = 2147876864;
+    s->plloutdiv = 256;
+
+    //printf("DONE: SIFIVE E PRCI RESET...\n");
+}
+
+static void sifive_e_prci_class_init(ObjectClass *klass, void *data)
+{
+    DeviceClass *dc = DEVICE_CLASS(klass);
+    dc->reset = sifive_e_prci_reset;
+}
+#endif
+
 static const TypeInfo sifive_e_prci_info = {
     .name          = TYPE_SIFIVE_E_PRCI,
     .parent        = TYPE_SYS_BUS_DEVICE,
     .instance_size = sizeof(SiFiveEPRCIState),
     .instance_init = sifive_e_prci_init,
+#ifdef CONFIG_FEAR5
+    .class_init    = sifive_e_prci_class_init,
+#endif    
 };
 
 static void sifive_e_prci_register_types(void)
@@ -120,5 +143,16 @@ DeviceState *sifive_e_prci_create(hwaddr addr)
     DeviceState *dev = qdev_new(TYPE_SIFIVE_E_PRCI);
     sysbus_realize_and_unref(SYS_BUS_DEVICE(dev), &error_fatal);
     sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, addr);
+
+#ifdef CONFIG_FEAR5
+    /* Output initial values */
+    /*
+    SiFiveEPRCIState *s = SIFIVE_E_PRCI(dev);
+    printf("s->hfrosccfg = %u;\n", s->hfrosccfg);
+    printf("s->hfxosccfg = %u;\n", s->hfxosccfg);
+    printf("s->pllcfg = %u;\n", s->pllcfg);
+    printf("s->plloutdiv = %u;\n", s->plloutdiv);
+    */
+#endif    
     return dev;
 }
