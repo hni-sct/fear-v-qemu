@@ -212,6 +212,12 @@ static void sifive_uart_reset_enter(Object *obj, ResetType type)
     s->rxctrl = 0;
     s->div = 0;
     s->rx_fifo_len = 0;
+#ifdef CONFIG_FEAR5
+    for (int i = 0; i < SIFIVE_UART_RX_FIFO_SIZE; i++) {
+        s->rx_fifo[i] = 0;
+    }
+    //printf("DONE: SIFIVE UART RESET...\n");
+#endif    
 }
 
 static void sifive_uart_reset_hold(Object *obj)
