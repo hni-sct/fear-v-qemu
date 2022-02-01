@@ -341,7 +341,11 @@ CPUArchState *cpu_copy(CPUArchState *env);
 #define CPU_INTERRUPT_TGT_INT_1   0x0800
 #define CPU_INTERRUPT_TGT_INT_2   0x2000
 
-/* First unused bit: 0x4000.  */
+#ifdef CONFIG_FEAR5
+#define CPU_INTERRUPT_FEAR5_TIMEOUT  0x4000
+#endif
+
+/* First unused bit: 0x8000.  */
 
 /* The set of all bits that should be masked when single-stepping.  */
 #define CPU_INTERRUPT_SSTEP_MASK \

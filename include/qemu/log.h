@@ -65,6 +65,10 @@ static inline bool qemu_log_separate(void)
 /* LOG_STRACE is used for user-mode strace logging. */
 #define LOG_STRACE         (1 << 19)
 
+#ifdef CONFIG_FEAR5
+#define FEAR5_LOG_GOLDENRUN (1 << 20)
+#endif
+
 /* Lock output for a series of related logs.  Since this is not needed
  * for a single qemu_log / qemu_log_mask / qemu_log_mask_and_addr, we
  * assume that qemu_loglevel_mask has already been tested, and that
