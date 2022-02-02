@@ -187,7 +187,9 @@ static void qemu_fi_exit(int i, const char *t) {
 
 void fear5_kill_mutant(uint32_t code) {
 
-	timer_del(timer);
+	if (timer) {
+		timer_del(timer);
+	}
 
     /* Check if golden run contains errors
        Note: "NOT_KILLED" is the exitcode without any known faulty behaviour. */
