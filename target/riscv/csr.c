@@ -22,6 +22,9 @@
 #include "cpu.h"
 #include "qemu/main-loop.h"
 #include "exec/exec-all.h"
+#ifdef CONFIG_FEAR5
+#include "fear5/faultinjection.h"
+#endif
 
 /* CSR function table public API */
 void riscv_get_csr_ops(int csrno, riscv_csr_operations *ops)
@@ -1929,6 +1932,9 @@ static RISCVException riscv_csrrw_do64(CPURISCVState *env, int csrno,
     }
     /* read old value */
     ret = csr_ops[csrno].read(env, csrno, &old_value);
+#ifdef CONFIG_FEAR5
+    csr_reads[csrno]++;
+#endif
     if (ret != RISCV_EXCP_NONE) {
         return ret;
     }
@@ -1938,6 +1944,9 @@ static RISCVException riscv_csrrw_do64(CPURISCVState *env, int csrno,
         new_value = (old_value & ~write_mask) | (new_value & write_mask);
         if (csr_ops[csrno].write) {
             ret = csr_ops[csrno].write(env, csrno, new_value);
+#ifdef CONFIG_FEAR5
+            csr_writes[csrno]++;
+#endif
             if (ret != RISCV_EXCP_NONE) {
                 return ret;
             }
