@@ -306,6 +306,17 @@ void helper_f5_trace_gpr_write(target_ulong idx)
     gpr_writes[idx]++;
 }
 
+target_ulong helper_f5_mutate_gpr(target_ulong idx, target_ulong reg)
+{
+    Mutant* m = FEAR5_CURRENT;
+    if (m && m->addr_reg_mem == idx) {
+        if (m->kind == GPR_PERMANENT || (m->kind == GPR_TRANSIENT && m->nr_access == gpr_reads[idx])) {
+            reg ^= m->biterror;
+        }
+    }
+    return reg;
+}
+
 void helper_f5_trace_load(target_ulong base, target_ulong offset)
 {
     target_ulong address = base + offset;

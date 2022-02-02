@@ -1115,6 +1115,7 @@ DEF_HELPER_5(rems_i128, tl, env, tl, tl, tl, tl)
 /* Fault Effect Analysis for RISC-V (FEAR5) */
 DEF_HELPER_1(f5_trace_gpr_read, void, tl)
 DEF_HELPER_1(f5_trace_gpr_write, void, tl)
+DEF_HELPER_2(f5_mutate_gpr, tl, tl, tl)
 DEF_HELPER_2(f5_trace_load, void, tl, tl)
 DEF_HELPER_2(f5_trace_store, void, tl, tl)
 DEF_HELPER_3(f5_trace_mem_filter, void, tl, tl, tl)

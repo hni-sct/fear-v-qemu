@@ -276,6 +276,18 @@ static void _f5_trace_gpr_read(int reg_num)
 #endif
 }
 
+static TCGv _f5_get_mutated_gpr(DisasContext *ctx, int reg_num)
+{
+#ifdef CONFIG_FEAR5
+    TCGv t = temp_new(ctx);
+    TCGv idx = tcg_const_tl(reg_num);
+    gen_helper_f5_mutate_gpr(t, idx, cpu_gpr[reg_num]);
+    tcg_temp_free(idx);
+    return t;
+#endif
+    return cpu_gpr[reg_num];
+}
+
 static TCGv get_gpr(DisasContext *ctx, int reg_num, DisasExtend ext)
 {
     TCGv t;
@@ -292,11 +304,11 @@ static TCGv get_gpr(DisasContext *ctx, int reg_num, DisasExtend ext)
             break;
         case EXT_SIGN:
             t = temp_new(ctx);
-            tcg_gen_ext32s_tl(t, cpu_gpr[reg_num]);
+            tcg_gen_ext32s_tl(t, _f5_get_mutated_gpr(ctx, reg_num));
             return t;
         case EXT_ZERO:
             t = temp_new(ctx);
-            tcg_gen_ext32u_tl(t, cpu_gpr[reg_num]);
+            tcg_gen_ext32u_tl(t, _f5_get_mutated_gpr(ctx, reg_num));
             return t;
         default:
             g_assert_not_reached();
@@ -308,7 +320,7 @@ static TCGv get_gpr(DisasContext *ctx, int reg_num, DisasExtend ext)
     default:
         g_assert_not_reached();
     }
-    return cpu_gpr[reg_num];
+    return _f5_get_mutated_gpr(ctx, reg_num);
 }
 
 static TCGv get_gprh(DisasContext *ctx, int reg_num)
@@ -317,8 +329,6 @@ static TCGv get_gprh(DisasContext *ctx, int reg_num)
     if (reg_num == 0) {
         return ctx->zero;
     }
-
-    _f5_trace_gpr_read(reg_num);
     return cpu_gprh[reg_num];
 }
 
