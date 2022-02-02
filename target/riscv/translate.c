@@ -963,6 +963,11 @@ static void riscv_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cs)
 
 static void riscv_tr_tb_start(DisasContextBase *db, CPUState *cpu)
 {
+#ifdef CONFIG_FEAR5
+    // Create new statistics entry for this TB...
+    TbExecutionStatistics *stats = g_new0(TbExecutionStatistics, 1);
+    g_hash_table_insert(fi_tb_stats, GUINT_TO_POINTER(db->pc_first), stats);
+#endif
 }
 
 static void riscv_tr_insn_start(DisasContextBase *dcbase, CPUState *cpu)
@@ -977,6 +982,18 @@ static void riscv_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     DisasContext *ctx = container_of(dcbase, DisasContext, base);
     CPURISCVState *env = cpu->env_ptr;
     uint16_t opcode16 = translator_lduw(env, &ctx->base, ctx->base.pc_next);
+
+#ifdef CONFIG_FEAR5
+    target_ulong *pc_old = g_new0(target_ulong, 1);
+    *pc_old = dcbase->pc_next;
+    // Add this execution to the TB-Insn-Exec Hashtable...
+    TbExecutionStatistics *stats = g_hash_table_lookup(fi_tb_stats, GUINT_TO_POINTER(dcbase->pc_first));
+    if (stats) {
+        // Store this instruction in pc_list...
+        stats->pc_list = g_slist_append(stats->pc_list, pc_old);
+        stats->icount = g_slist_length(stats->pc_list);
+    }
+#endif
 
     ctx->ol = ctx->xl;
     decode_opc(env, ctx, opcode16);

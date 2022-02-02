@@ -46,6 +46,9 @@
 #include "tb-hash.h"
 #include "tb-context.h"
 #include "internal.h"
+#ifdef CONFIG_FEAR5
+#include "fear5/faultinjection.h"
+#endif
 
 /* -icount align implementation. */
 
@@ -330,6 +333,18 @@ const void *HELPER(lookup_tb_ptr)(CPUArchState *env)
 
     log_cpu_exec(pc, cpu, tb);
 
+#ifdef CONFIG_FEAR5
+    if (qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN)) {
+        TbExecutionStatistics *stats = g_hash_table_lookup(fi_tb_stats, GUINT_TO_POINTER(pc));
+        if (stats == NULL) {
+            // This should not happen!
+            fprintf(stderr, "ERROR: cannot find TbExecutionStatistics struct!\n");
+            exit(1);
+        }
+        stats->exec_counter += 1;
+    }
+#endif
+
     return tb->tc.ptr;
 }
 
@@ -352,6 +367,15 @@ cpu_tb_exec(CPUState *cpu, TranslationBlock *itb, int *tb_exit)
     const void *tb_ptr = itb->tc.ptr;
 
     log_cpu_exec(itb->pc, cpu, itb);
+
+#ifdef CONFIG_FEAR5
+    /* Increment execution counter for this TB... */
+    TbExecutionStatistics *stats = g_hash_table_lookup(fi_tb_stats, GUINT_TO_POINTER(itb->pc));
+    if (stats) {
+        stats->exec_counter++;
+        stats->size = itb->size;
+    }
+#endif
 
     qemu_thread_jit_execute();
     ret = tcg_qemu_tb_exec(env, tb_ptr);
