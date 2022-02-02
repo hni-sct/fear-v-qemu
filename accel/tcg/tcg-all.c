@@ -37,6 +37,9 @@
 #include "hw/boards.h"
 #endif
 #include "internal.h"
+#ifdef CONFIG_FEAR5
+#include "fear5/faultinjection.h"
+#endif
 
 struct TCGState {
     AccelState parent_obj;
@@ -112,6 +115,12 @@ bool mttcg_enabled;
 
 static int tcg_init_machine(MachineState *ms)
 {
+#ifdef CONFIG_FEAR5
+#ifdef FEAR5_TIME_MEASUREMENT
+    fear5_printtime("tcg_init");
+#endif
+#endif
+
     TCGState *s = TCG_STATE(current_accel());
 #ifdef CONFIG_USER_ONLY
     unsigned max_cpus = 1;
@@ -121,6 +130,20 @@ static int tcg_init_machine(MachineState *ms)
 
     tcg_allowed = true;
     mttcg_enabled = s->mttcg_enabled;
+
+#ifdef CONFIG_FEAR5
+    // Init data structures for golden run analysis:
+    fi_tb_stats = g_hash_table_new(g_direct_hash, g_direct_equal);
+    fi_pc_executions = g_hash_table_new_full(g_direct_hash, g_direct_equal, g_free, g_free);
+
+    // Init memory access counters (for golden run AND fault injection!)
+    mem_access = g_hash_table_new_full(g_direct_hash, g_direct_equal, g_free, g_free);
+
+    // Only init fault injector, if mutants are specified!
+    if (FEAR5_COUNT != 0) {
+        fear5_init();
+    }
+#endif
 
     page_init();
     tb_htable_init();
