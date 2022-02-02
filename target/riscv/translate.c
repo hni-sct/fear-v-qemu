@@ -897,16 +897,31 @@ static uint32_t opcode_at(DisasContextBase *dcbase, target_ulong pc)
 /* Include the auto-generated decoder for 16 bit insn */
 #include "decode-insn16.c.inc"
 
+static inline uint32_t QEMU_ALWAYS_INLINE _f5_get_mutated_insn(uint32_t data, target_ulong addr)
+{
+#ifdef CONFIG_FEAR5
+    Mutant* m = FEAR5_CURRENT;
+    if (m) {
+        if ((m->addr_reg_mem == addr && m->kind == IMEM_PERMANENT)
+            || (m->kind == IFR_PERMANENT)) {
+            data ^= m->biterror;
+        }
+    }
+#endif
+    return data;
+}
+
 static void decode_opc(CPURISCVState *env, DisasContext *ctx, uint16_t opcode)
 {
     /* check for compressed insn */
-    if (extract16(opcode, 0, 2) != 3) {
+    uint16_t opcode16 = _f5_get_mutated_insn(opcode, ctx->base.pc_next);
+    if (extract16(opcode16, 0, 2) != 3) {
         if (!has_ext(ctx, RVC)) {
             gen_exception_illegal(ctx);
         } else {
-            ctx->opcode = opcode;
+            ctx->opcode = opcode16;
             ctx->pc_succ_insn = ctx->base.pc_next + 2;
-            if (!decode_insn16(ctx, opcode)) {
+            if (!decode_insn16(ctx, opcode16)) {
                 gen_exception_illegal(ctx);
             }
         }
@@ -915,6 +930,7 @@ static void decode_opc(CPURISCVState *env, DisasContext *ctx, uint16_t opcode)
         opcode32 = deposit32(opcode32, 16, 16,
                              translator_lduw(env, &ctx->base,
                                              ctx->base.pc_next + 2));
+        opcode32 = _f5_get_mutated_insn(opcode32, ctx->base.pc_next);
         ctx->opcode = opcode32;
         ctx->pc_succ_insn = ctx->base.pc_next + 4;
         if (!decode_insn32(ctx, opcode32)) {
