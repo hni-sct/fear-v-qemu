@@ -24,20 +24,7 @@ GHashTable *fi_pc_executions;
 
 static void timeout(void *opaque)
 {
-    CPUState *cpu;
-    timer_del(timer);
-    /* we're call this from the IO-thread. If
-       we reset the cpu from here, we will crash.
-       So interrupt the running cpu thread hand do
-       the reset there.*/
-    CPU_FOREACH(cpu) {
-        // TODO: Prüfen, ob das nicht generell irgendwie besser geht...
-        //       Auf lange Sicht wäre es schon cool, gar nicht mehr ins Target zu müssen ab hier.
-        // NOTE: Dieses Interrupt-Flag bewirkt auch was bei ARM.
-        //       (Aber wie oben geschrieben: am besten weg hiermit. Das fällt mir noch auf die Füße.)
-        cpu_interrupt(cpu, CPU_INTERRUPT_FEAR5_TIMEOUT);
-        //fear5_kill_mutant(TIMEOUT);
-    }
+    fear5_kill_mutant(TIMEOUT);
 }
 
 static void fi_reset_state(void) {
@@ -200,6 +187,8 @@ static void qemu_fi_exit(int i, const char *t) {
 
 void fear5_kill_mutant(uint32_t code) {
 
+	timer_del(timer);
+
     /* Check if golden run contains errors
        Note: "NOT_KILLED" is the exitcode without any known faulty behaviour. */
     if (phase == GOLDEN_RUN && code != NOT_KILLED) {
@@ -257,10 +246,10 @@ void fear5_kill_mutant(uint32_t code) {
         // Reset all mutant and CPU state
         // cpu_reset(cpu);
         //cpu_exit(cpu);
-        //qemu_system_reset_request(SHUTDOWN_CAUSE_GUEST_RESET);
+        qemu_system_reset_request(SHUTDOWN_CAUSE_GUEST_RESET);
 
         //qemu_system_reset(SHUTDOWN_CAUSE_NONE); // as in qemu_init() -> l. 4500
-        qemu_system_reset(SHUTDOWN_CAUSE_GUEST_RESET);
+        //qemu_system_reset(SHUTDOWN_CAUSE_GUEST_RESET);
 
         fi_reset_state();
         
