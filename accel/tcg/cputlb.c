@@ -40,6 +40,9 @@
 #include "qemu/plugin-memory.h"
 #endif
 #include "tcg/tcg-ldst.h"
+#ifdef CONFIG_FEAR5
+#include "fear5/faultinjection.h"
+#endif
 
 /* DEBUG defines, enable DEBUG_TLB_LOG to log to the CPU_LOG_MMU target */
 /* #define DEBUG_TLB */
@@ -1912,6 +1915,19 @@ load_helper(CPUArchState *env, target_ulong addr, MemOpIdx oi,
     uint64_t res;
     size_t size = memop_size(op);
 
+#ifdef CONFIG_FEAR5
+    /* Early exit if this is a stimulated memory cell */
+    MemStimulator *stim = fear5_get_stimulator(addr);
+    if (stim) {
+        uint32_t v;
+        if (fread(&v, sizeof(uint32_t), 1, stim->file)) {
+            return v;
+        } else {
+            return 0;
+        }
+    }
+#endif
+
     /* Handle CPU specific unaligned behaviour */
     if (addr & ((1 << a_bits) - 1)) {
         cpu_unaligned_access(env_cpu(env), addr, access_type,
@@ -2310,6 +2326,18 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
     unsigned a_bits = get_alignment_bits(get_memop(oi));
     void *haddr;
     size_t size = memop_size(op);
+
+#ifdef CONFIG_FEAR5
+    MemMonitor *mon = fear5_get_monitor(addr);
+    if (mon) {
+        if (phase == GOLDEN_RUN) {
+            mon->data[mon->pos++] = val;
+        }
+        else if (phase == MUTANT && mon->data[mon->pos++] != val) {
+            fear5_kill_mutant(OUTPUT_DEVIATION);
+        }
+    }
+#endif
 
     /* Handle CPU specific unaligned behaviour */
     if (addr & ((1 << a_bits) - 1)) {
