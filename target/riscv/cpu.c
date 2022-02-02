@@ -123,6 +123,41 @@ static void set_misa(CPURISCVState *env, RISCVMXL mxl, uint32_t ext)
 {
     env->misa_mxl_max = env->misa_mxl = mxl;
     env->misa_ext_mask = env->misa_ext = ext;
+
+#ifdef CONFIG_FEAR5
+    if (qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN)) {
+        FILE *fd = qemu_log_lock();
+        qemu_log("----------------\n");
+        qemu_log("MISA: ");
+
+        /* RXLEN */
+        int rxlen = -1;
+        if (mxl == MXL_RV32) {
+            rxlen = 32;
+        }
+        if (mxl == MXL_RV64) {
+            rxlen = 64;
+        }
+
+        /* Modules */
+        if (ext & RVI) qemu_log("rv%di", rxlen);
+        if (ext & RVE) qemu_log("rv%de", rxlen);
+        if (ext & RVM) qemu_log(",rv%dm", rxlen);
+        if (ext & RVA) qemu_log(",rv%da", rxlen);
+        if (ext & RVF) qemu_log(",rv%df", rxlen);
+        if (ext & RVD) qemu_log(",rv%dd", rxlen);
+        if (ext & RVC) {
+            qemu_log(",rv%dc", rxlen);
+            if (ext & RVF) qemu_log(",rv%dfc", rxlen);
+            if (ext & RVD) qemu_log(",rv%ddc", rxlen);
+        }
+        if (ext & RVS) qemu_log(",rv%ds", rxlen);
+        if (ext & RVU) qemu_log(",rv%du", rxlen);
+
+        qemu_log("\n\n");
+        qemu_log_unlock(fd);
+    }
+#endif
 }
 
 static void set_priv_version(CPURISCVState *env, int priv_ver)
