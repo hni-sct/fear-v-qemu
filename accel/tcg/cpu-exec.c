@@ -804,6 +804,15 @@ static inline bool cpu_handle_interrupt(CPUState *cpu,
             qemu_mutex_unlock_iothread();
             return true;
         }
+#if defined(CONFIG_FEAR5)
+        else if (interrupt_request & CPU_INTERRUPT_FEAR5_TIMEOUT) {
+            replay_interrupt();
+            cpu->interrupt_request &= ~CPU_INTERRUPT_FEAR5_TIMEOUT;
+            fear5_kill_mutant(TIMEOUT);
+            qemu_mutex_unlock_iothread();
+            return true;
+        }
+#endif /* CONFIG_FEAR5 */
 #endif /* !TARGET_I386 */
         /* The target hook has 3 exit conditions:
            False when the interrupt isn't processed,
