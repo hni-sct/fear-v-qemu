@@ -1934,6 +1934,14 @@ static RISCVException riscv_csrrw_do64(CPURISCVState *env, int csrno,
     ret = csr_ops[csrno].read(env, csrno, &old_value);
 #ifdef CONFIG_FEAR5
     csr_reads[csrno]++;
+
+    Mutant* m = FEAR5_CURRENT;
+    if (m && m->addr_reg_mem == csrno) {
+        if (m->kind == CSR_PERMANENT ||
+            (m->kind == CSR_TRANSIENT && m->nr_access == csr_reads[csrno])) {
+            old_value ^= m->biterror;
+        }
+    }
 #endif
     if (ret != RISCV_EXCP_NONE) {
         return ret;
