@@ -350,6 +350,18 @@ void helper_f5_trace_mem_filter(target_ulong idx, target_ulong base, target_ulon
     //     qemu_log("LD/ST for GPR %u (Access %" PRIu64 "): [" TARGET_FMT_lx " + %d]\n", idx, gpr_reads[idx], base, (int) offset);
     // }
 }
+
+void helper_f5_trace_tb_exec(target_ulong pc)
+{
+    /* Increment execution counter for this TB... */
+    TbExecutionStatistics *stats = g_hash_table_lookup(fi_tb_stats, GUINT_TO_POINTER(pc));
+    if (stats == NULL) {
+        // This should not happen!
+        fprintf(stderr, "ERROR: cannot find TbExecutionStatistics struct!\n");
+        exit(1);
+    }
+    stats->exec_counter++;
+}
 #endif
 
 #endif /* !CONFIG_USER_ONLY */

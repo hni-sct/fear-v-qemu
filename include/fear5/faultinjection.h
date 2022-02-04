@@ -78,7 +78,6 @@ typedef struct TbExecutionStatistics
 {
     GSList *pc_list;
     uint64_t exec_counter;
-    uint64_t size;
     uint64_t icount;
 } TbExecutionStatistics;
 

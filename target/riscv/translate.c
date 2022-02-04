@@ -1003,6 +1003,11 @@ static void riscv_tr_tb_start(DisasContextBase *db, CPUState *cpu)
     // Create new statistics entry for this TB...
     TbExecutionStatistics *stats = g_new0(TbExecutionStatistics, 1);
     g_hash_table_insert(fi_tb_stats, GUINT_TO_POINTER(db->pc_first), stats);
+
+    // Helper call to record all (chained & non-chained) TB executions
+    TCGv tmp = tcg_const_tl(db->pc_first);
+    gen_helper_f5_trace_tb_exec(tmp);
+    tcg_temp_free(tmp);
 #endif
 }
 
@@ -1024,11 +1029,14 @@ static void riscv_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     *pc_old = dcbase->pc_next;
     // Add this execution to the TB-Insn-Exec Hashtable...
     TbExecutionStatistics *stats = g_hash_table_lookup(fi_tb_stats, GUINT_TO_POINTER(dcbase->pc_first));
-    if (stats) {
-        // Store this instruction in pc_list...
-        stats->pc_list = g_slist_append(stats->pc_list, pc_old);
-        stats->icount = g_slist_length(stats->pc_list);
+    if (stats == NULL) {
+        // This should not happen!
+        fprintf(stderr, "ERROR: cannot find TbExecutionStatistics struct!\n");
+        exit(1);
     }
+    // Store this instruction in pc_list...
+    stats->pc_list = g_slist_append(stats->pc_list, pc_old);
+    stats->icount = g_slist_length(stats->pc_list);
 #endif
 
     ctx->ol = ctx->xl;
