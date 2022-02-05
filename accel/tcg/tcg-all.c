@@ -133,7 +133,7 @@ static int tcg_init_machine(MachineState *ms)
 
 #ifdef CONFIG_FEAR5
     // Init data structures for golden run analysis:
-    fi_tb_stats = g_hash_table_new(g_direct_hash, g_direct_equal);
+    fi_tb_stats = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
     fi_pc_executions = g_hash_table_new_full(g_direct_hash, g_direct_equal, g_free, g_free);
 
     // Init memory access counters (for golden run AND fault injection!)
