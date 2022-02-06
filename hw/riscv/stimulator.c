@@ -48,7 +48,7 @@ static uint64_t stimulator_read(void *opaque, hwaddr addr, unsigned int size)
             s->counter++;
             break;
         default:
-            drand48_r(&s->buffer, &dnext);
+            dnext = drand48();
             next = (uint64_t) ((s->max_value + 1) * dnext);
             break;
     }
@@ -75,7 +75,7 @@ static const MemoryRegionOps stimulator_ops = {
 static void stimulator_realize(DeviceState *dev, Error **errp)
 {
     StimulatorState *d = STIMULATOR(dev);
-    srand48_r(d->seed, &d->buffer);
+    srand48(d->seed);
     memory_region_init_io(&d->mmio, NULL, &stimulator_ops, d,
                           TYPE_STIMULATOR, STIMULATOR_SIZE);
     MemoryRegion *sys_mem = get_system_memory();

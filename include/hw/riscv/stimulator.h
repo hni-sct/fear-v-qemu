@@ -44,7 +44,6 @@ typedef struct StimulatorState
     uint64_t seed;
     uint64_t max_value;
     int counter;
-    struct drand48_data buffer;
 } StimulatorState;
 
 #endif
