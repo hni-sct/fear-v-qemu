@@ -104,19 +104,19 @@ static void terminator_realize(DeviceState *dev, Error **errp)
 static void terminator_reset_enter(Object *obj, ResetType type)
 {
     // Terminator *s = TERMINATOR(obj);
-    printf("DONE: TERMINATOR RESET ENTER...\n");
+    // printf("DONE: TERMINATOR RESET ENTER...\n");
 }
 
 static void terminator_reset_hold(Object *obj)
 {
     // Terminator *s = TERMINATOR(obj);
-    printf("DONE: TERMINATOR RESET HOLD...\n");
+    // printf("DONE: TERMINATOR RESET HOLD...\n");
 }
 
 static void terminator_reset_exit(Object *obj)
 {
     // Terminator *s = TERMINATOR(obj);
-    printf("DONE: TERMINATOR RESET EXIT...\n");
+    // printf("DONE: TERMINATOR RESET EXIT...\n");
     fi_reset_state();
 }
 
