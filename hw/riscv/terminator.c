@@ -101,6 +101,25 @@ static void terminator_realize(DeviceState *dev, Error **errp)
     memory_region_add_subregion(sys_mem, d->address, &d->mmio);
 }
 
+static void terminator_reset_enter(Object *obj, ResetType type)
+{
+    // Terminator *s = TERMINATOR(obj);
+    printf("DONE: TERMINATOR RESET ENTER...\n");
+}
+
+static void terminator_reset_hold(Object *obj)
+{
+    // Terminator *s = TERMINATOR(obj);
+    printf("DONE: TERMINATOR RESET HOLD...\n");
+}
+
+static void terminator_reset_exit(Object *obj)
+{
+    // Terminator *s = TERMINATOR(obj);
+    printf("DONE: TERMINATOR RESET EXIT...\n");
+    fi_reset_state();
+}
+
 static void terminator_class_init(ObjectClass *klass, void *data)
 {
 	DeviceClass *dc = DEVICE_CLASS(klass);
@@ -108,6 +127,11 @@ static void terminator_class_init(ObjectClass *klass, void *data)
     dc->realize = terminator_realize;
     dc->user_creatable = true;
     device_class_set_props(dc, terminator_properties);
+
+    ResettableClass *rc = RESETTABLE_CLASS(klass);
+    rc->phases.enter = terminator_reset_enter;
+    rc->phases.hold  = terminator_reset_hold;
+    rc->phases.exit  = terminator_reset_exit;
 }
 
 static const TypeInfo terminator_info = 

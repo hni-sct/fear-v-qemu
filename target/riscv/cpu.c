@@ -498,9 +498,6 @@ static void riscv_cpu_reset(DeviceState *dev)
         riscv_csr_write(env, i, 0);
     }
     riscv_csr_write(env, 0x301, 0x40001105); // MISA Register
-
-    // Reset all FEAR5 HW access counters and reset timer...
-    fi_reset_state();
 #endif
 }
 
