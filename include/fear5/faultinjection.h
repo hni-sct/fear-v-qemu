@@ -113,6 +113,7 @@ MemStimulator* fear5_get_stimulator(uint64_t address);
 
 /* controller.c */
 void fear5_init(void);
+void fi_reset_state(void);
 void fear5_kill_mutant(uint32_t code);
 //void qemu_fi_store_mutated_tb(TranslationBlock *tb);
 

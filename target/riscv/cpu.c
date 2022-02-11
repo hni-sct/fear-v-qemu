@@ -32,6 +32,10 @@
 #include "sysemu/kvm.h"
 #include "kvm_riscv.h"
 
+#ifdef CONFIG_FEAR5
+#include "fear5/faultinjection.h"
+#endif
+
 /* RISC-V CPU definitions */
 
 static const char riscv_exts[26] = "IEMAFDQCLBJTPVNSUHKORWXYZG";
@@ -445,28 +449,6 @@ static void riscv_cpu_reset(DeviceState *dev)
     RISCVCPUClass *mcc = RISCV_CPU_GET_CLASS(cpu);
     CPURISCVState *env = &cpu->env;
 
-#ifdef CONFIG_FEAR5
-    memset(env->gpr, 0, sizeof(uint32_t) * 32);
-    memset(env->fpr, 0, sizeof(uint64_t) * 32);
-    
-    for (int i=0; i<4096; i++) {
-        riscv_csr_write(env, i, 0);
-    }
-    riscv_csr_write(env, 0x301, 0x40001105); // MISA Register
-    // riscv_csr_write(env, 0xB00, 0xdfcd0e90); // Dont care: MCYCLE
-    // riscv_csr_write(env, 0xB02, 0xdfcd3a28); // Dont care: MINSTRET
-    // riscv_csr_write(env, 0xB80, 0x00054230); // Dont care: MCYCLEH
-    // riscv_csr_write(env, 0xB82, 0x00054230); // Dont care: MINSTRETH
-    // riscv_csr_write(env, 0xC00, 0xdfcda0a8); // Dont care: User level CYCLE
-    // riscv_csr_write(env, 0xC02, 0xdfcdcdd0); // Dont care: User level INSTRET
-    // riscv_csr_write(env, 0xC80, 0x00054230); // Dont care: User level CYCLEH
-    // riscv_csr_write(env, 0xC82, 0x00054230); // Dont care: User level INSTRET
-
-    // Maybe a better solution would be to clone all CPURISCVState members individually?!
-
-    //printf("DONE: RISCV CPU RESET...\n");
-#endif
-
     mcc->parent_reset(dev);
 #ifndef CONFIG_USER_ONLY
     env->misa_mxl = env->misa_mxl_max;
@@ -506,6 +488,19 @@ static void riscv_cpu_reset(DeviceState *dev)
     if (kvm_enabled()) {
         kvm_riscv_reset_vcpu(cpu);
     }
+#endif
+
+#ifdef CONFIG_FEAR5
+    memset(env->gpr, 0, sizeof(uint32_t) * 32);
+    memset(env->fpr, 0, sizeof(uint64_t) * 32);
+
+    for (int i=0; i<4096; i++) {
+        riscv_csr_write(env, i, 0);
+    }
+    riscv_csr_write(env, 0x301, 0x40001105); // MISA Register
+
+    // Reset all FEAR5 HW access counters and reset timer...
+    fi_reset_state();
 #endif
 }
 

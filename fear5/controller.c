@@ -8,7 +8,7 @@
 TestSetup *setup;
 enum MutationTestPhase phase = GOLDEN_RUN;
 
-static QEMUTimer *timer;
+static QEMUTimer *timer = NULL;
 static int64_t tStart;
 static uint64_t runTimeMax;
 
@@ -27,7 +27,7 @@ static void timeout(void *opaque)
     fear5_kill_mutant(TIMEOUT);
 }
 
-static void fi_reset_state(void) {
+void fi_reset_state(void) {
     //qemu_log_mask(FEAR5_LOG_GOLDENRUN, "Clearing 'fi_tb_stats'...\n");
     g_hash_table_remove_all(fi_tb_stats);
     g_hash_table_remove_all(fi_pc_executions);
@@ -57,6 +57,10 @@ static void fi_reset_state(void) {
     memset(csr_reads, 0, 4096*sizeof(uint64_t));
     memset(csr_writes, 0, 4096*sizeof(uint64_t));
     tStart = qemu_clock_get_us(QEMU_CLOCK_VIRTUAL);
+
+    if (timer && phase == MUTANT) {
+        timer_mod(timer, tStart + runTimeMax);
+    }
 }
 
 void fear5_init(void) {
@@ -253,10 +257,10 @@ void fear5_kill_mutant(uint32_t code) {
         //qemu_system_reset(SHUTDOWN_CAUSE_NONE); // as in qemu_init() -> l. 4500
         //qemu_system_reset(SHUTDOWN_CAUSE_GUEST_RESET);
 
-        fi_reset_state();
+        // fi_reset_state();
         
         // Rearm timeout alarm
-        timer_mod(timer, tStart + runTimeMax);
+        // timer_mod(timer, tStart + runTimeMax);
 
 //        resettable_release_reset(rvcpu, RESET_TYPE_COLD);
 
