@@ -36,6 +36,9 @@
 #include "exec/confidential-guest-support.h"
 #include "hw/virtio/virtio.h"
 #include "hw/virtio/virtio-pci.h"
+#ifdef CONFIG_FEAR5
+#include "hw/riscv/terminator.h"
+#endif
 
 GlobalProperty hw_compat_6_2[] = {};
 const size_t hw_compat_6_2_len = G_N_ELEMENTS(hw_compat_6_2);
@@ -873,6 +876,11 @@ static void machine_class_init(ObjectClass *oc, void *data)
     object_class_property_set_description(oc, "memory-backend",
                                           "Set RAM backend"
                                           "Valid value is ID of hostmem based backend");
+
+#ifdef CONFIG_FEAR5
+    /* Allow FEAR5 terminator in all Machine types */
+    machine_class_allow_dynamic_sysbus_dev(mc, TYPE_TERMINATOR);
+#endif
 }
 
 static void machine_class_base_init(ObjectClass *oc, void *data)

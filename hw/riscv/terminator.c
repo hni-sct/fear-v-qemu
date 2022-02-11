@@ -106,13 +106,14 @@ static void terminator_class_init(ObjectClass *klass, void *data)
 	DeviceClass *dc = DEVICE_CLASS(klass);
 	dc->desc = "Fault-Injection Backend Device";
     dc->realize = terminator_realize;
+    dc->user_creatable = true;
     device_class_set_props(dc, terminator_properties);
 }
 
 static const TypeInfo terminator_info = 
 {
     .name = TYPE_TERMINATOR,
-    .parent = TYPE_DEVICE,
+    .parent = TYPE_SYS_BUS_DEVICE,
     .instance_size = sizeof(Terminator),
     .class_init = terminator_class_init,
 };

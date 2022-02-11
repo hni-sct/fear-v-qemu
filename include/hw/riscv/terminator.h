@@ -26,7 +26,7 @@
 #define TYPE_TERMINATOR "terminator"
 #define TERMINATOR_SIZE 4
 #define TERMINATOR_ADDR_DEFAULT 0x10037004
-#define TERMINATOR(obj) OBJECT_CHECK(Terminator, obj, TYPE_TERMINATOR)
+OBJECT_DECLARE_SIMPLE_TYPE(Terminator, TERMINATOR)
 
 enum {
 	FI_EXITCODE_NORMAL  = 0x00000000,
@@ -38,8 +38,7 @@ enum {
 typedef struct Terminator
 {
 	/* <private> */
-    // SysBusDevice parent_obj;
-    DeviceState parent;
+    SysBusDevice parent_obj;
 
     /* <public> */
     MemoryRegion mmio;
