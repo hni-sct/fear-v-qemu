@@ -2,7 +2,6 @@
 #include "fear5/logger.h"
 #include "fear5/parser.h"
 #include "sysemu/runstate.h"
-//#include "hw/boards.h"
 #include <time.h>
 
 TestSetup *setup;
@@ -28,7 +27,6 @@ static void timeout(void *opaque)
 }
 
 void fi_reset_state(void) {
-    //qemu_log_mask(FEAR5_LOG_GOLDENRUN, "Clearing 'fi_tb_stats'...\n");
     g_hash_table_remove_all(fi_tb_stats);
     g_hash_table_remove_all(fi_pc_executions);
 
@@ -103,43 +101,23 @@ static gint my_comparator(gconstpointer item1, gconstpointer item2) {
 
 static void qemu_fi_exit(int i, const char *t) {
 
-    /* TO DO: Check if this is still required! */
-    if (qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN)) {
-        /* OLD: GPR Accesses... */
-        qemu_log("\nGPR Read Access Statistics:\n");
-        qemu_log_mask(FEAR5_LOG_GOLDENRUN, "--------------------------------------------------------------------------------\n");
-        for (int i = 1; i < 32; i++) {
-            if (gpr_reads[i]) {
-                qemu_log("GPR[%d]: %" PRIu64 "\n", i, gpr_reads[i]);
-            }
-        }
-
-        qemu_log("\nCSR Read Access Statistics:\n");
-        qemu_log_mask(FEAR5_LOG_GOLDENRUN, "--------------------------------------------------------------------------------\n");
-        for (int i = 0; i < 4096; i++) {
-            if (csr_reads[i]) {
-                qemu_log("CSR[%d]: %" PRIu64 "\n", i, csr_reads[i]);
-            }
-        }
-    }
-
     /* Compact golden run statistics... */
     if (qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN)) {
         /* Output GPR Accesses (R/W/Total) */
-        qemu_log_mask(FEAR5_LOG_GOLDENRUN, "\nGPR executions <#reads, #writes, #total>:\n");
-        qemu_log_mask(FEAR5_LOG_GOLDENRUN, "--------------------------------------------------------------------------------\n");
+        qemu_log("\nGPR executions <#reads, #writes, #total>:\n");
+        qemu_log("--------------------------------------------------------------------------------\n");
         for (int i = 1; i < 32; i++) {
-            qemu_log_mask(FEAR5_LOG_GOLDENRUN, "GPR[%d]:%" PRIu64 ",%" PRIu64 ",%" PRIu64 "\n", i, gpr_reads[i], gpr_writes[i], gpr_reads[i] + gpr_writes[i]);
+            qemu_log("GPR[%d]:%" PRIu64 ",%" PRIu64 ",%" PRIu64 "\n", i, gpr_reads[i], gpr_writes[i], gpr_reads[i] + gpr_writes[i]);
         }
 
         /* Output CSR Accesses (R/W/Total) */
-        qemu_log_mask(FEAR5_LOG_GOLDENRUN, "\nCSR executions <#reads, #writes, #total>:\n");
-        qemu_log_mask(FEAR5_LOG_GOLDENRUN, "--------------------------------------------------------------------------------\n");
+        qemu_log("\nCSR executions <#reads, #writes, #total>:\n");
+        qemu_log("--------------------------------------------------------------------------------\n");
         for (int i = 0; i < 4096; i++) {
             /* Skip reporting about any CSR without accesses */
             uint64_t a = csr_reads[i] + csr_writes[i];
             if (a) {
-                qemu_log_mask(FEAR5_LOG_GOLDENRUN, "CSR[%d]:%" PRIu64 ",%" PRIu64 ",%" PRIu64 "\n", i, csr_reads[i], csr_writes[i], a);
+                qemu_log("CSR[%d]:%" PRIu64 ",%" PRIu64 ",%" PRIu64 "\n", i, csr_reads[i], csr_writes[i], a);
             }
         }
 
@@ -150,8 +128,8 @@ static void qemu_fi_exit(int i, const char *t) {
         g_hash_table_foreach(fi_tb_stats, fi_output_tb_stats, NULL);
 
         /* Output PC_EXEC_SUMMARY */
-        qemu_log_mask(FEAR5_LOG_GOLDENRUN, "\nINSTRUCTION executions:\n");
-        qemu_log_mask(FEAR5_LOG_GOLDENRUN, "--------------------------------------------------------------------------------\n");
+        qemu_log("\nINSTRUCTION executions:\n");
+        qemu_log("--------------------------------------------------------------------------------\n");
         GList *k = g_list_sort(g_hash_table_get_keys(fi_pc_executions), (GCompareFunc)my_comparator);
         while(k) {
             // printf("KEY: 0x" TARGET_FMT_lx "\n", GPOINTER_TO_UINT(k->data));
@@ -161,22 +139,22 @@ static void qemu_fi_exit(int i, const char *t) {
                 printf("ERROR2: counter == NULL!\n");
                 exit(1);
             }
-            qemu_log_mask(FEAR5_LOG_GOLDENRUN, "EXE[" TARGET_FMT_lx "]:%" PRIu64 "\n", GPOINTER_TO_UINT(k->data), *counter);
+            qemu_log("EXE[" TARGET_FMT_lx "]:%" PRIu64 "\n", GPOINTER_TO_UINT(k->data), *counter);
 
             k = k->next;
         }
 
         /* Output MEM Accesses (R/W/Total) */
-        qemu_log_mask(FEAR5_LOG_GOLDENRUN, "\nMemory executions <#reads, #writes, #total>:\n");
-        qemu_log_mask(FEAR5_LOG_GOLDENRUN, "--------------------------------------------------------------------------------\n");
+        qemu_log("\nMemory executions <#reads, #writes, #total>:\n");
+        qemu_log("--------------------------------------------------------------------------------\n");
         GList *k2 = g_list_sort(g_hash_table_get_keys(mem_access), (GCompareFunc)my_comparator);
         while(k2) {
             MemAccessStatistics *mem = g_hash_table_lookup(mem_access, k2->data);
-            qemu_log_mask(FEAR5_LOG_GOLDENRUN, "MEMORY[" TARGET_FMT_lx "]:%" PRIu64 ",%" PRIu64 ",%" PRIu64 "\n", GPOINTER_TO_UINT(k2->data), mem->reads, mem->writes, (mem->reads + mem->writes));
+            qemu_log("MEMORY[" TARGET_FMT_lx "]:%" PRIu64 ",%" PRIu64 ",%" PRIu64 "\n", GPOINTER_TO_UINT(k2->data), mem->reads, mem->writes, (mem->reads + mem->writes));
             k2 = k2->next;
         }
 
-        qemu_log_mask(FEAR5_LOG_GOLDENRUN, "--------------------------------------------------------------------------------\n");
+        qemu_log("--------------------------------------------------------------------------------\n");
     }
 
     if (t != NULL) {
@@ -216,8 +194,6 @@ void fear5_kill_mutant(uint32_t code) {
         fi_log_mutant(runTime, runTimeMax, code);
     }
 
-    // if (mutant_gotonext() == 1) {
-
     // Try to select the next mutant...
     if (!FEAR5_COUNT || fear5_gotonext_mutant()) {
         // Quit QEMU if no further mutants available
@@ -229,83 +205,18 @@ void fear5_kill_mutant(uint32_t code) {
     CPUState *cpu;
     CPU_FOREACH(cpu) {
 
-//    	RISCVCPU *rvcpu = RISCV_CPU(cpu);
-//    	resettable_assert_reset(rvcpu, RESET_TYPE_COLD);
-
-        // NEW:
-        //if (phase == GOLDEN_RUN) {
-            // Invalidate all tbs after golden run so the first mutant
-            // can retranslate and inject faults:
-            tb_flush(cpu);
-            //tlb_flush(cpu);
-            phase = MUTANT;
-        //} else if (phase == MUTANT) {
-            // Invalidate all tbs into which faults have been injected
-            // and keep the rest (yields significant speedup):
-        //    for (int i = 0; i < g_slist_length(tb_list); i++) {
-        //        tb_phys_invalidate(g_slist_nth_data(tb_list, i), -1);
-        //    }
-        //    g_slist_free(tb_list);
-        //    tb_list = NULL;
-        //}
-
-        // Reset all mutant and CPU state
-        // cpu_reset(cpu);
-        //cpu_exit(cpu);
-        qemu_system_reset_request(SHUTDOWN_CAUSE_GUEST_RESET);
-
-        //qemu_system_reset(SHUTDOWN_CAUSE_NONE); // as in qemu_init() -> l. 4500
-        //qemu_system_reset(SHUTDOWN_CAUSE_GUEST_RESET);
-
-        // fi_reset_state();
+        // Open question: should the TB flush be done here or better during
+        //                the reset of the terminator device?
+        tb_flush(cpu);
+        // Same here: should we update the phase here or during QOM reset?
+        phase = MUTANT;
         
-        // Rearm timeout alarm
-        // timer_mod(timer, tStart + runTimeMax);
-
-//        resettable_release_reset(rvcpu, RESET_TYPE_COLD);
-
-        // cpu_loop_exit(cpu);
+        // Request reset: this has to be asynchronous to make the timeout work properly!
+        qemu_system_reset_request(SHUTDOWN_CAUSE_GUEST_RESET);
     }
 
 }
 
-//void qemu_fi_store_mutated_tb(TranslationBlock *tb) {
-//	TranslationBlock *tBlock = tb;
-//    tb_list = g_slist_append(tb_list, tBlock);
-//}
-
-//Mutant* mutant_current(void)
-//{
-//    if (setup && setup->m_index == -1) {
-//        return NULL;
-//    }
-//    if (setup && setup->m_index < setup->m_count) {
-//        return &(setup->current);
-//    }
-//    return NULL;
-//}
-
-//int mutant_gotonext(void)
-//{
-//    if (!FEAR5_COUNT) {
-//        return 1;
-//    }
-//    return fear5_gotonext_mutant();
-//}
-
-//int mutant_count(void)
-//{
-//    if (!setup)
-//        return 0;
-//    return setup->m_count;
-//}
-//
-//int mutant_index(void)
-//{
-//    if (!setup)
-//        return 0;
-//    return setup->m_index;
-//}
 
 MemMonitor* fear5_get_monitor(uint64_t address)
 {

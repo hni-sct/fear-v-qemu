@@ -47,7 +47,6 @@ typedef struct MemMonitor {
     uint64_t address;
     unsigned int pos;
     uint64_t data[LEN_MAX];
-    // TO DO: Other stuff like regex for matching, etc...
 } MemMonitor;
 
 typedef struct MemStimulator {
@@ -74,8 +73,7 @@ enum MutantResult {
     EXIT_TRAP          = 0x10000000,
 };
 
-typedef struct TbExecutionStatistics
-{
+typedef struct TbExecutionStatistics {
     GSList *pc_list;
     uint64_t exec_counter;
     uint64_t icount;
@@ -86,37 +84,25 @@ typedef struct MemAccessStatistics {
     uint64_t writes;
 } MemAccessStatistics;
 
-extern TestSetup *setup;
 #define FEAR5_CURRENT ((setup && setup->m_index < setup->m_count) ? &(setup->current) : NULL)
 #define FEAR5_COUNT   (setup ? setup->m_count : 0)
 #define FEAR5_INDEX   (setup ? setup->m_index : 0)
 
+extern TestSetup *setup;
 extern enum MutationTestPhase phase;
 extern uint64_t gpr_reads[32];
 extern uint64_t gpr_writes[32];
 extern uint64_t csr_reads[4096];
 extern uint64_t csr_writes[4096];
-
 extern GHashTable *mem_access;
-
 extern GHashTable *fi_tb_stats;
 extern GHashTable *fi_pc_executions;
 
-/* config-parser.c */
-//Mutant* mutant_current(void);
-//int mutant_gotonext(void);
-//int mutant_count(void);
-//int mutant_index(void);
-
 MemMonitor* fear5_get_monitor(uint64_t address);
 MemStimulator* fear5_get_stimulator(uint64_t address);
-
-/* controller.c */
 void fear5_init(void);
 void fi_reset_state(void);
 void fear5_kill_mutant(uint32_t code);
-//void qemu_fi_store_mutated_tb(TranslationBlock *tb);
-
 void fear5_printtime(const char* prefix);
 
 #endif /* FAULTINJECTION_H_ */
