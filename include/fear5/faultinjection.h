@@ -11,7 +11,7 @@
 #include <inttypes.h>
 #include <glib.h>
 
-#define EXTRA_TIME 5000LL // 5ms
+#define EXTRA_TIME 1000LL // 1ms
 #define LEN_MAX 65536
 
 //#define FEAR5_TIME_MEASUREMENT

@@ -158,7 +158,7 @@ void fear5_kill_mutant(uint32_t code) {
     uint64_t runTime = (tEnd < tStart) ? (-tStart-tEnd) : (tEnd-tStart);
 
     if (f5->phase == GOLDEN_RUN) {
-        runTimeMax = (1.5f * runTime) + EXTRA_TIME;
+        runTimeMax = (1.125f * runTime) + EXTRA_TIME;
         fi_log_goldenrun(runTime, runTimeMax);
     } else if (f5->phase == MUTANT) {
         fi_log_mutant(runTime, runTimeMax, code);
