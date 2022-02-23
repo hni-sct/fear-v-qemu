@@ -1933,12 +1933,12 @@ static RISCVException riscv_csrrw_do64(CPURISCVState *env, int csrno,
     /* read old value */
     ret = csr_ops[csrno].read(env, csrno, &old_value);
 #ifdef CONFIG_FEAR5
-    csr_reads[csrno]++;
+    f5->csr[csrno].r++;
 
     Mutant* m = FEAR5_CURRENT;
     if (m && m->addr_reg_mem == csrno) {
         if (m->kind == CSR_PERMANENT ||
-            (m->kind == CSR_TRANSIENT && m->nr_access == csr_reads[csrno])) {
+            (m->kind == CSR_TRANSIENT && m->nr_access == f5->csr[csrno].r)) {
             old_value ^= m->biterror;
         }
     }
@@ -1953,7 +1953,7 @@ static RISCVException riscv_csrrw_do64(CPURISCVState *env, int csrno,
         if (csr_ops[csrno].write) {
             ret = csr_ops[csrno].write(env, csrno, new_value);
 #ifdef CONFIG_FEAR5
-            csr_writes[csrno]++;
+            f5->csr[csrno].w++;
 #endif
             if (ret != RISCV_EXCP_NONE) {
                 return ret;

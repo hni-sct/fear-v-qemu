@@ -2330,10 +2330,10 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
 #ifdef CONFIG_FEAR5
     MemMonitor *mon = fear5_get_monitor(addr);
     if (mon) {
-        if (phase == GOLDEN_RUN) {
+        if (f5->phase == GOLDEN_RUN) {
             mon->data[mon->pos++] = val;
         }
-        else if (phase == MUTANT && mon->data[mon->pos++] != val) {
+        else if (f5->phase == MUTANT && mon->data[mon->pos++] != val) {
             fear5_kill_mutant(OUTPUT_DEVIATION);
         }
     }

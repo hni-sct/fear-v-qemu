@@ -1002,8 +1002,8 @@ static void riscv_tr_tb_start(DisasContextBase *db, CPUState *cpu)
 #ifdef CONFIG_FEAR5
 	if (qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN)) {
 		// Create new statistics entry for this TB...
-		TbExecutionStatistics *stats = g_new0(TbExecutionStatistics, 1);
-		g_hash_table_insert(fi_tb_stats, GUINT_TO_POINTER(db->pc_first), stats);
+		Fear5TbExecCounter *stats = g_new0(Fear5TbExecCounter, 1);
+		g_hash_table_insert(f5->tb, GUINT_TO_POINTER(db->pc_first), stats);
 
 		// Helper call to record all (chained & non-chained) TB executions
 		TCGv tmp = tcg_const_tl(db->pc_first);
@@ -1031,15 +1031,14 @@ static void riscv_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
 		target_ulong *pc_old = g_new0(target_ulong, 1);
 		*pc_old = dcbase->pc_next;
 		// Add this execution to the TB-Insn-Exec Hashtable...
-		TbExecutionStatistics *stats = g_hash_table_lookup(fi_tb_stats, GUINT_TO_POINTER(dcbase->pc_first));
+		Fear5TbExecCounter *stats = g_hash_table_lookup(f5->tb, GUINT_TO_POINTER(dcbase->pc_first));
 		if (stats == NULL) {
 			// This should not happen!
-			fprintf(stderr, "ERROR: cannot find TbExecutionStatistics struct!\n");
+			fprintf(stderr, "ERROR: cannot find Fear5TbExecCounter struct!\n");
 			exit(1);
 		}
 		// Store this instruction in pc_list...
-		stats->pc_list = g_slist_append(stats->pc_list, pc_old);
-		stats->icount = g_slist_length(stats->pc_list);
+		stats->pcs = g_list_append(stats->pcs, pc_old);
     }
 #endif
 

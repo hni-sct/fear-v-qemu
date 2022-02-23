@@ -298,19 +298,19 @@ target_ulong helper_hyp_hlvx_wu(CPURISCVState *env, target_ulong address)
 #ifdef CONFIG_FEAR5
 void helper_f5_trace_gpr_read(target_ulong idx)
 {
-    gpr_reads[idx]++;
+    f5->gpr[idx].r++;
 }
 
 void helper_f5_trace_gpr_write(target_ulong idx)
 {
-    gpr_writes[idx]++;
+    f5->gpr[idx].w++;
 }
 
 target_ulong helper_f5_mutate_gpr(target_ulong idx, target_ulong reg)
 {
     Mutant* m = FEAR5_CURRENT;
     if (m && m->addr_reg_mem == idx) {
-        if (m->kind == GPR_PERMANENT || (m->kind == GPR_TRANSIENT && m->nr_access == gpr_reads[idx])) {
+        if (m->kind == GPR_PERMANENT || (m->kind == GPR_TRANSIENT && m->nr_access == f5->gpr[idx].r)) {
             reg ^= m->biterror;
         }
     }
@@ -322,12 +322,12 @@ void helper_f5_trace_load(target_ulong base, target_ulong offset)
     target_ulong address = base + offset;
 
     /* Update load counter */
-    MemAccessStatistics *mem = g_hash_table_lookup(mem_access, GUINT_TO_POINTER(address));
+    Fear5ReadWriteCounter *mem = g_hash_table_lookup(f5->mem, GUINT_TO_POINTER(address));
     if (mem == NULL) {
-        mem = g_new0(MemAccessStatistics, 1);
-        g_hash_table_insert(mem_access, GUINT_TO_POINTER(address), mem);
+        mem = g_new0(Fear5ReadWriteCounter, 1);
+        g_hash_table_insert(f5->mem, GUINT_TO_POINTER(address), mem);
     }
-    mem->reads = mem->reads + 1;
+    mem->r++;
 }
 
 void helper_f5_trace_store(target_ulong base, target_ulong offset)
@@ -335,32 +335,32 @@ void helper_f5_trace_store(target_ulong base, target_ulong offset)
     target_ulong address = base + offset;
 
     /* Update store counter */
-    MemAccessStatistics *mem = g_hash_table_lookup(mem_access, GUINT_TO_POINTER(address));
+    Fear5ReadWriteCounter *mem = g_hash_table_lookup(f5->mem, GUINT_TO_POINTER(address));
     if (mem == NULL) {
-        mem = g_new0(MemAccessStatistics, 1);
-        g_hash_table_insert(mem_access, GUINT_TO_POINTER(address), mem);
+        mem = g_new0(Fear5ReadWriteCounter, 1);
+        g_hash_table_insert(f5->mem, GUINT_TO_POINTER(address), mem);
     }
-    mem->writes = mem->writes + 1;
+    mem->w++;
 }
 
 void helper_f5_trace_mem_filter(target_ulong idx, target_ulong base, target_ulong offset)
 {
     /* Records the address-containing GPRs of any Load/Store instruction */
     // if (qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN)) {
-    //     qemu_log("LD/ST for GPR %u (Access %" PRIu64 "): [" TARGET_FMT_lx " + %d]\n", idx, gpr_reads[idx], base, (int) offset);
+    //     qemu_log("LD/ST for GPR %u (Access %" PRIu64 "): [" TARGET_FMT_lx " + %d]\n", idx, f5->gpr[idx].r, base, (int) offset);
     // }
 }
 
 void helper_f5_trace_tb_exec(target_ulong pc)
 {
     /* Increment execution counter for this TB... */
-    TbExecutionStatistics *stats = g_hash_table_lookup(fi_tb_stats, GUINT_TO_POINTER(pc));
+    Fear5TbExecCounter *stats = g_hash_table_lookup(f5->tb, GUINT_TO_POINTER(pc));
     if (stats == NULL) {
         // This should not happen!
-        fprintf(stderr, "ERROR: cannot find TbExecutionStatistics struct!\n");
+        fprintf(stderr, "ERROR: cannot find Fear5TbExecCounter struct!\n");
         exit(1);
     }
-    stats->exec_counter++;
+    stats->x++;
 }
 #endif
 

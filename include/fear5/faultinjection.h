@@ -16,6 +16,29 @@
 
 //#define FEAR5_TIME_MEASUREMENT
 
+enum Fear5TestPhase {
+    GOLDEN_RUN = 0,
+    MUTANT = 1,
+};
+
+typedef struct Fear5TbExecCounter {
+    GList *pcs;
+    uint64_t x;
+} Fear5TbExecCounter;
+
+typedef struct Fear5ReadWriteCounter {
+    uint64_t r;
+    uint64_t w;
+} Fear5ReadWriteCounter;
+
+typedef struct Fear5State {
+    enum Fear5TestPhase phase;
+    Fear5ReadWriteCounter gpr[32];
+    Fear5ReadWriteCounter csr[4096];
+    GHashTable *mem;
+    GHashTable *tb;
+} Fear5State;
+
 enum MutantType {
     GPR_PERMANENT = 1,
     GPR_TRANSIENT = 2,
@@ -56,11 +79,6 @@ typedef struct MemStimulator {
     FILE *file;
 } MemStimulator;
 
-enum MutationTestPhase {
-    GOLDEN_RUN,
-    MUTANT,
-};
-
 enum MutantResult {
     NOT_KILLED         = 0x000000,
     OUTPUT_DEVIATION   = 0x100000,
@@ -73,30 +91,13 @@ enum MutantResult {
     EXIT_TRAP          = 0x10000000,
 };
 
-typedef struct TbExecutionStatistics {
-    GSList *pc_list;
-    uint64_t exec_counter;
-    uint64_t icount;
-} TbExecutionStatistics;
-
-typedef struct MemAccessStatistics {
-    uint64_t reads;
-    uint64_t writes;
-} MemAccessStatistics;
-
 #define FEAR5_CURRENT ((setup && setup->m_index < setup->m_count) ? &(setup->current) : NULL)
 #define FEAR5_COUNT   (setup ? setup->m_count : 0)
 #define FEAR5_INDEX   (setup ? setup->m_index : 0)
 
+extern Fear5State *f5;
+
 extern TestSetup *setup;
-extern enum MutationTestPhase phase;
-extern uint64_t gpr_reads[32];
-extern uint64_t gpr_writes[32];
-extern uint64_t csr_reads[4096];
-extern uint64_t csr_writes[4096];
-extern GHashTable *mem_access;
-extern GHashTable *fi_tb_stats;
-extern GHashTable *fi_pc_executions;
 
 MemMonitor* fear5_get_monitor(uint64_t address);
 MemStimulator* fear5_get_stimulator(uint64_t address);

@@ -4,22 +4,13 @@
 #include "sysemu/runstate.h"
 #include <time.h>
 
+Fear5State *f5;
+
 TestSetup *setup;
-enum MutationTestPhase phase = GOLDEN_RUN;
 
 static QEMUTimer *timer = NULL;
 static int64_t tStart;
 static uint64_t runTimeMax;
-
-uint64_t gpr_reads[32];
-uint64_t gpr_writes[32];
-uint64_t csr_reads[4096];
-uint64_t csr_writes[4096];
-
-GHashTable *mem_access;
-
-GHashTable *fi_tb_stats;
-GHashTable *fi_pc_executions;
 
 static void timeout(void *opaque)
 {
@@ -27,10 +18,10 @@ static void timeout(void *opaque)
 }
 
 void fi_reset_state(void) {
-    g_hash_table_remove_all(fi_tb_stats);
-    g_hash_table_remove_all(fi_pc_executions);
-
-    g_hash_table_remove_all(mem_access);
+    memset(f5->gpr, 0, 32*sizeof(Fear5ReadWriteCounter));
+    memset(f5->csr, 0, 4096*sizeof(Fear5ReadWriteCounter));
+    g_hash_table_remove_all(f5->mem);
+    g_hash_table_remove_all(f5->tb);
 
     //    qemu_fi_monitors_reset();
     if (setup && setup->monitors) {
@@ -50,48 +41,35 @@ void fi_reset_state(void) {
         }
     }
 
-    memset(gpr_reads, 0, 32*sizeof(uint64_t));
-    memset(gpr_writes, 0, 32*sizeof(uint64_t));
-    memset(csr_reads, 0, 4096*sizeof(uint64_t));
-    memset(csr_writes, 0, 4096*sizeof(uint64_t));
     tStart = qemu_clock_get_us(QEMU_CLOCK_VIRTUAL);
 
-    if (timer && phase == MUTANT) {
+    if (timer && f5->phase == MUTANT) {
         timer_mod(timer, tStart + runTimeMax);
     }
 }
 
 void fear5_init(void) {
     fi_log_header();
-    fi_reset_state();
     timer = timer_new_us(QEMU_CLOCK_VIRTUAL, timeout, NULL);
 }
 
-static void iterate_tb_pcs(gpointer item, gpointer parent) {
-    // An dieser Stelle nichts ausgeben und stattdessen
-    // die PC->ExecCounter Hashmap befuellen.
-    target_ulong *pc = (target_ulong *)item;
-    uint64_t *to_add = (uint64_t *)parent;
+static void get_pc_exe(gpointer item, gpointer user) {
+    Fear5TbExecCounter *tbe = (Fear5TbExecCounter *) item;
+    GHashTable *pc_exe = (GHashTable *) user;
 
-    uint64_t *counter = g_hash_table_lookup(fi_pc_executions, GUINT_TO_POINTER(*pc));
-    if (counter == NULL) {
-        counter = g_new0(uint64_t, 1);
-        g_hash_table_insert(fi_pc_executions, GUINT_TO_POINTER(*pc), counter);
-    }
-    *counter += *to_add;
-}
-
-static void fi_output_tb_stats(gpointer key, gpointer value, gpointer user_data) {
-    target_ulong tb_pc = GPOINTER_TO_UINT(key);
-    TbExecutionStatistics *stats = g_hash_table_lookup(fi_tb_stats, GUINT_TO_POINTER(tb_pc));
-    if (stats) {
-        if (stats->pc_list) {
-            g_slist_foreach(stats->pc_list, (GFunc)iterate_tb_pcs, &stats->exec_counter);
+    // Calculate PC executions from TB executions...
+    for (int i = 0; i < g_list_length(tbe->pcs); i++) {
+        target_ulong *pc = g_list_nth_data(tbe->pcs, i);
+        uint64_t *ctr = g_hash_table_lookup(pc_exe, GUINT_TO_POINTER(*pc));
+        if (ctr == NULL) {
+            ctr = g_new0(uint64_t, 1);
+            g_hash_table_insert(pc_exe, GUINT_TO_POINTER(*pc), ctr);
         }
+        *ctr += tbe->x;
     }
 }
 
-static gint my_comparator(gconstpointer item1, gconstpointer item2) {
+static gint compare(gconstpointer item1, gconstpointer item2) {
     if (item1 < item2)
         return -1;
     if (item1 > item2)
@@ -107,7 +85,7 @@ static void qemu_fi_exit(int i, const char *t) {
         qemu_log("\nGPR executions <#reads, #writes, #total>:\n");
         qemu_log("--------------------------------------------------------------------------------\n");
         for (int i = 1; i < 32; i++) {
-            qemu_log("GPR[%d]:%" PRIu64 ",%" PRIu64 ",%" PRIu64 "\n", i, gpr_reads[i], gpr_writes[i], gpr_reads[i] + gpr_writes[i]);
+            qemu_log("GPR[%d]:%" PRIu64 ",%" PRIu64 ",%" PRIu64 "\n", i, f5->gpr[i].r, f5->gpr[i].w, f5->gpr[i].r + f5->gpr[i].w);
         }
 
         /* Output CSR Accesses (R/W/Total) */
@@ -115,42 +93,34 @@ static void qemu_fi_exit(int i, const char *t) {
         qemu_log("--------------------------------------------------------------------------------\n");
         for (int i = 0; i < 4096; i++) {
             /* Skip reporting about any CSR without accesses */
-            uint64_t a = csr_reads[i] + csr_writes[i];
+            uint64_t a = f5->csr[i].r + f5->csr[i].w;
             if (a) {
-                qemu_log("CSR[%d]:%" PRIu64 ",%" PRIu64 ",%" PRIu64 "\n", i, csr_reads[i], csr_writes[i], a);
+                qemu_log("CSR[%d]:%" PRIu64 ",%" PRIu64 ",%" PRIu64 "\n", i, f5->csr[i].r, f5->csr[i].w, a);
             }
         }
 
-        /* Output TB_INSN_EXEC stats... */
-        // 1) foreach k,v in <fi_tb_stats>
-        /* TO DO: Check, if this is functional. I can see no output from this!
-                  This seems also to be handled by Output PC_EXEC_SUMMARY below... */
-        g_hash_table_foreach(fi_tb_stats, fi_output_tb_stats, NULL);
+        /* Calculate and output PC exec stats... */
+        GHashTable *pc_exe = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, g_free);
+        g_list_foreach(g_hash_table_get_values(f5->tb), get_pc_exe, pc_exe);
 
         /* Output PC_EXEC_SUMMARY */
         qemu_log("\nINSTRUCTION executions:\n");
         qemu_log("--------------------------------------------------------------------------------\n");
-        GList *k = g_list_sort(g_hash_table_get_keys(fi_pc_executions), (GCompareFunc)my_comparator);
+        GList *k = g_list_sort(g_hash_table_get_keys(pc_exe), compare);
         while(k) {
-            // printf("KEY: 0x" TARGET_FMT_lx "\n", GPOINTER_TO_UINT(k->data));
-            //qemu_log("0x" TARGET_FMT_lx ", %" PRIu64 "\n", )
-            uint64_t *counter = g_hash_table_lookup(fi_pc_executions, k->data);
-            if (counter == NULL) {
-                printf("ERROR2: counter == NULL!\n");
-                exit(1);
-            }
+            uint64_t *counter = g_hash_table_lookup(pc_exe, k->data);
             qemu_log("EXE[" TARGET_FMT_lx "]:%" PRIu64 "\n", GPOINTER_TO_UINT(k->data), *counter);
-
             k = k->next;
         }
+        g_hash_table_destroy(pc_exe);
 
         /* Output MEM Accesses (R/W/Total) */
         qemu_log("\nMemory executions <#reads, #writes, #total>:\n");
         qemu_log("--------------------------------------------------------------------------------\n");
-        GList *k2 = g_list_sort(g_hash_table_get_keys(mem_access), (GCompareFunc)my_comparator);
+        GList *k2 = g_list_sort(g_hash_table_get_keys(f5->mem), compare);
         while(k2) {
-            MemAccessStatistics *mem = g_hash_table_lookup(mem_access, k2->data);
-            qemu_log("MEMORY[" TARGET_FMT_lx "]:%" PRIu64 ",%" PRIu64 ",%" PRIu64 "\n", GPOINTER_TO_UINT(k2->data), mem->reads, mem->writes, (mem->reads + mem->writes));
+            Fear5ReadWriteCounter *mem = g_hash_table_lookup(f5->mem, k2->data);
+            qemu_log("MEMORY[" TARGET_FMT_lx "]:%" PRIu64 ",%" PRIu64 ",%" PRIu64 "\n", GPOINTER_TO_UINT(k2->data), mem->r, mem->w, (mem->r + mem->w));
             k2 = k2->next;
         }
 
@@ -175,7 +145,7 @@ void fear5_kill_mutant(uint32_t code) {
 
     /* Check if golden run contains errors
        Note: "NOT_KILLED" is the exitcode without any known faulty behaviour. */
-    if (phase == GOLDEN_RUN && code != NOT_KILLED) {
+    if (f5->phase == GOLDEN_RUN && code != NOT_KILLED) {
         qemu_fi_exit(1, "ERROR: Golden Run has errors! Fix this or use another test program.");
     }
 
@@ -187,10 +157,10 @@ void fear5_kill_mutant(uint32_t code) {
     int64_t tEnd = qemu_clock_get_us(QEMU_CLOCK_VIRTUAL);
     uint64_t runTime = (tEnd < tStart) ? (-tStart-tEnd) : (tEnd-tStart);
 
-    if (phase == GOLDEN_RUN) {
+    if (f5->phase == GOLDEN_RUN) {
         runTimeMax = (1.5f * runTime) + EXTRA_TIME;
         fi_log_goldenrun(runTime, runTimeMax);
-    } else if (phase == MUTANT) {
+    } else if (f5->phase == MUTANT) {
         fi_log_mutant(runTime, runTimeMax, code);
     }
 
@@ -209,7 +179,7 @@ void fear5_kill_mutant(uint32_t code) {
         //                the reset of the terminator device?
         tb_flush(cpu);
         // Same here: should we update the phase here or during QOM reset?
-        phase = MUTANT;
+        f5->phase = MUTANT;
         
         // Request reset: this has to be asynchronous to make the timeout work properly!
         qemu_system_reset_request(SHUTDOWN_CAUSE_GUEST_RESET);
