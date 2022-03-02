@@ -1118,6 +1118,6 @@ DEF_HELPER_1(f5_trace_gpr_write, void, tl)
 DEF_HELPER_2(f5_mutate_gpr, tl, tl, tl)
 DEF_HELPER_2(f5_trace_load, void, tl, tl)
 DEF_HELPER_2(f5_trace_store, void, tl, tl)
-DEF_HELPER_3(f5_trace_mem_filter, void, tl, tl, tl)
+//DEF_HELPER_3(f5_trace_mem_filter, void, tl, tl, tl)
 DEF_HELPER_1(f5_trace_tb_exec, void, tl)
 #endif

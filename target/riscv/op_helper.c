@@ -343,13 +343,13 @@ void helper_f5_trace_store(target_ulong base, target_ulong offset)
     mem->w++;
 }
 
-void helper_f5_trace_mem_filter(target_ulong idx, target_ulong base, target_ulong offset)
-{
-    /* Records the address-containing GPRs of any Load/Store instruction */
-    // if (qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN)) {
-    //     qemu_log("LD/ST for GPR %u (Access %" PRIu64 "): [" TARGET_FMT_lx " + %d]\n", idx, f5->gpr[idx].r, base, (int) offset);
-    // }
-}
+// void helper_f5_trace_mem_filter(target_ulong idx, target_ulong base, target_ulong offset)
+// {
+//     /* Records the address-containing GPRs of any Load/Store instruction */
+//     // if (qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN)) {
+//     //     qemu_log("LD/ST for GPR %u (Access %" PRIu64 "): [" TARGET_FMT_lx " + %d]\n", idx, f5->gpr[idx].r, base, (int) offset);
+//     // }
+// }
 
 void helper_f5_trace_tb_exec(target_ulong pc)
 {
