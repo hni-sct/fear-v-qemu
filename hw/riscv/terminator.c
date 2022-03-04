@@ -29,26 +29,26 @@ static Property terminator_properties[] = {
     DEFINE_PROP_END_OF_LIST(),
 };
 
-static QEMUTimer *timer;
-static int64_t tStart;
+// static QEMUTimer *timer;
+// static int64_t tStart;
 
-static void timeout(void *opaque)
-{
-    CPUState *cpu;
-    CPU_FOREACH(cpu) {
-        cpu_interrupt(cpu, CPU_INTERRUPT_HARD);
-        //cpu->exception_index = -1;
-        cpu->halted = 0;
-        fprintf(stderr, "INFO: Interrupted CPU for command 'FI_REQUEST_IRQ'...\n");
-    }
-}
+// static void timeout(void *opaque)
+// {
+//     CPUState *cpu;
+//     CPU_FOREACH(cpu) {
+//         cpu_interrupt(cpu, CPU_INTERRUPT_HARD);
+//         //cpu->exception_index = -1;
+//         cpu->halted = 0;
+//         fprintf(stderr, "INFO: Interrupted CPU for command 'FI_REQUEST_IRQ'...\n");
+//     }
+// }
 
-static void request_irq(void) {
-    fprintf(stderr, "INFO: Requesting IRQ in 1 sec...\n");
-    timer = timer_new_us(QEMU_CLOCK_HOST, timeout, NULL);
-    tStart = qemu_clock_get_us(QEMU_CLOCK_HOST);
-    timer_mod(timer, tStart + 1000000LL);
-}
+// static void request_irq(void) {
+//     fprintf(stderr, "INFO: Requesting IRQ in 1 sec...\n");
+//     timer = timer_new_us(QEMU_CLOCK_HOST, timeout, NULL);
+//     tStart = qemu_clock_get_us(QEMU_CLOCK_HOST);
+//     timer_mod(timer, tStart + 1000000LL);
+// }
 
 static uint64_t terminator_read(void *opaque, hwaddr addr, unsigned int size)
 {
