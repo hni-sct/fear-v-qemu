@@ -71,7 +71,7 @@ void fi_set_logfile(const char *path) {
 void fi_log_header(void) {
 
     if (logfile == NULL) {
-        logfile = stdout;
+        logfile = stderr;
     }
 
     fprintf(logfile, "################################################################################\n");
@@ -87,14 +87,14 @@ void fi_log_footer(void) {
 	fprintf(logfile, "#   Mutation testing finished. Simulated %d mutants.\n", FEAR5_COUNT);
     fprintf(logfile, "#   TO DO: Footer with statistics and stuff like that...\n");
 
-    if (logfile != stdout) {
+    if (logfile != stderr) {
         fflush(logfile);
         fclose(logfile);
 
-        // fprintf(stdout, "\r Successfully finished mutation test... \n");
+        // fprintf(stderr, "\r Successfully finished mutation test... \n");
         int dIdx = (FEAR5_COUNT > 0) ? floor(log10((float) FEAR5_COUNT)) + 1 : 1;
-        fprintf(stdout, "\r%0*d / %0*d (%03.02f %%)\n", dIdx, FEAR5_COUNT, dIdx, FEAR5_COUNT, 100.0f);
-        fflush(stdout);
+        fprintf(stderr, "\r%0*d / %0*d (%03.02f %%)\n", dIdx, FEAR5_COUNT, dIdx, FEAR5_COUNT, 100.0f);
+        fflush(stderr);
     }
 }
 
@@ -173,11 +173,11 @@ void fi_log_mutant(uint64_t time, uint64_t time_max, uint32_t code) {
         fflush(logfile);
 
         /* Display progress without too much slowdown... */
-        if (logfile != stdout) {
+        if (logfile != stderr) {
             int i = FEAR5_INDEX + 1;
             float percent = (((float) i) / FEAR5_COUNT) * 100.0f;
-            fprintf(stdout, "\r%0*d / %0*d (%03.02f %%)", dIdx, i, dIdx, FEAR5_COUNT, percent);
-            fflush(stdout);
+            fprintf(stderr, "\r%0*d / %0*d (%03.02f %%)", dIdx, i, dIdx, FEAR5_COUNT, percent);
+            fflush(stderr);
         }
     }
 }
