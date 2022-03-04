@@ -70,8 +70,8 @@ static void terminator_write(void *opaque, hwaddr addr,
         return fear5_kill_mutant(NOT_KILLED);
     case FI_EXITCODE_FAIL:
         return fear5_kill_mutant(EXIT_FAIL);
-    case FI_REQUEST_IRQ:
-        return request_irq();
+    // case FI_REQUEST_IRQ:
+    //     return request_irq();
     // Ignore unknown exit codes!
     // default:
     //     if (exitcode & FI_EXITCODE_TRAP) {
