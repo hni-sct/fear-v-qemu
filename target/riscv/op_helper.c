@@ -312,6 +312,10 @@ target_ulong helper_f5_mutate_gpr(target_ulong idx, target_ulong reg)
     if (m && m->addr_reg_mem == idx) {
         if (m->kind == GPR_PERMANENT || (m->kind == GPR_TRANSIENT && m->nr_access == f5->gpr[idx].r)) {
             reg ^= m->biterror;
+        } else if (m->kind == GPR_STUCK_AT_ZERO) {
+            reg &= ~(m->biterror);
+        } else if (m->kind == GPR_STUCK_AT_ONE) {
+            reg |= m->biterror;
         }
     }
     return reg;

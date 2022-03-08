@@ -1940,6 +1940,10 @@ static RISCVException riscv_csrrw_do64(CPURISCVState *env, int csrno,
         if (m->kind == CSR_PERMANENT ||
             (m->kind == CSR_TRANSIENT && m->nr_access == f5->csr[csrno].r)) {
             old_value ^= m->biterror;
+        } else if (m->kind == CSR_STUCK_AT_ZERO) {
+            old_value &= ~(m->biterror);
+        } else if (m->kind == CSR_STUCK_AT_ONE) {
+            old_value |= m->biterror;
         }
     }
 #endif

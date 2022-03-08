@@ -912,9 +912,16 @@ static inline uint32_t QEMU_ALWAYS_INLINE _f5_get_mutated_insn(uint32_t data, ta
 #ifdef CONFIG_FEAR5
     Mutant* m = FEAR5_CURRENT;
     if (m) {
-        if ((m->addr_reg_mem == addr && m->kind == IMEM_PERMANENT)
-            || (m->kind == IFR_PERMANENT)) {
+        if (m->kind == IFR_PERMANENT) {
             data ^= m->biterror;
+        } else if (m->addr_reg_mem == addr) {
+            if (m->kind == IMEM_PERMANENT) {
+                data ^= m->biterror;
+            } else if (m->kind == IMEM_STUCK_AT_ZERO) {
+                data &= ~(m->biterror);
+            } else if (m->kind == IMEM_STUCK_AT_ONE) {
+                data |= m->biterror;
+            }
         }
     }
 #endif

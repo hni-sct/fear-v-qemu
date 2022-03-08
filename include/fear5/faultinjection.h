@@ -46,6 +46,12 @@ enum MutantType {
     CSR_TRANSIENT = 4,
     IMEM_PERMANENT = 5,
     IFR_PERMANENT = 7,
+    GPR_STUCK_AT_ZERO  = 10,
+    GPR_STUCK_AT_ONE   = 11,
+    CSR_STUCK_AT_ZERO  = 30,
+    CSR_STUCK_AT_ONE   = 31,
+    IMEM_STUCK_AT_ZERO = 50,
+    IMEM_STUCK_AT_ONE  = 51,
 };
 
 typedef struct Mutant {
