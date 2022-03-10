@@ -10,7 +10,7 @@ static int flush_div = 0;
 
 static const char *mutant_result_text[] = {
     "not killed",
-    "output deviation",
+    "signature",
     "timeout",
     "exception",
     "unknown",
