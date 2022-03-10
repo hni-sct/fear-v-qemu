@@ -914,6 +914,10 @@ static inline uint32_t QEMU_ALWAYS_INLINE _f5_get_mutated_insn(uint32_t data, ta
     if (m) {
         if (m->kind == IFR_PERMANENT) {
             data ^= m->biterror;
+        } else if (m->kind == IFR_STUCK_AT_ZERO) {
+            data &= ~(m->biterror);
+        } else if (m->kind == IFR_STUCK_AT_ONE) {
+            data |= m->biterror;
         } else if (m->addr_reg_mem == addr) {
             if (m->kind == IMEM_PERMANENT) {
                 data ^= m->biterror;
