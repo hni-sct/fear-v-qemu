@@ -78,6 +78,18 @@ int testsetup_load(const char *filename)
 		g_hash_table_insert(setup->stimulators, GINT_TO_POINTER(s->address), s);
 	}
 
+	// 3) Timeout
+	evalxpath("/TestSetup/Timeout", xpath_ctx, &xpath_obj, &nodes);
+	if (nodes->nodeNr == 1) {
+		xmlNodePtr xml_timeout = nodes->nodeTab[0];
+		const char* factor_str = (const char*) xmlGetNoNsProp(xml_timeout, BAD_CAST "factor");
+		const char* extra_str = (const char*) xmlGetNoNsProp(xml_timeout, BAD_CAST "extra");
+
+		// Store the timeout settings:
+		sscanf(factor_str, "%f", &setup->timeout_factor);
+		sscanf(extra_str, "%" PRIu64, &setup->timeout_us_extra);
+	}
+
 	/* Close XML list of monitors */
 	xmlXPathFreeObject(xpath_obj);
 	xmlXPathFreeContext(xpath_ctx);

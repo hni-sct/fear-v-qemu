@@ -11,7 +11,6 @@
 #include <inttypes.h>
 #include <glib.h>
 
-#define EXTRA_TIME 1000LL // 1ms
 #define LEN_MAX 65536
 
 //#define FEAR5_TIME_MEASUREMENT
@@ -71,6 +70,9 @@ typedef struct TestSetup {
     Mutant current;
     int m_index;
     int m_count;
+
+    float timeout_factor;
+    uint64_t timeout_us_extra;
 } TestSetup;
 
 typedef struct MemMonitor {
@@ -113,5 +115,8 @@ void fear5_init(void);
 void fi_reset_state(void);
 void fear5_kill_mutant(uint32_t code);
 void fear5_printtime(const char* prefix);
+
+float f5_get_timeout_factor(void);
+uint64_t f5_get_timeout_us_extra(void);
 
 #endif /* FAULTINJECTION_H_ */

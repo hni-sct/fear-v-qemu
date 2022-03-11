@@ -158,7 +158,7 @@ void fear5_kill_mutant(uint32_t code) {
     uint64_t runTime = (tEnd < tStart) ? (-tStart-tEnd) : (tEnd-tStart);
 
     if (f5->phase == GOLDEN_RUN) {
-        runTimeMax = (1.125f * runTime) + EXTRA_TIME;
+        runTimeMax = (f5_get_timeout_factor() * runTime) + f5_get_timeout_us_extra();
         fi_log_goldenrun(runTime, runTimeMax);
     } else if (f5->phase == MUTANT) {
         fi_log_mutant(runTime, runTimeMax, code);
@@ -213,4 +213,24 @@ void fear5_printtime(const char* prefix)
         exit(1);
     }
     printf("TIME %s, %ld sec, %ld nsec\n", prefix, time.tv_sec, time.tv_nsec);
+}
+
+float f5_get_timeout_factor(void)
+{
+    if (!setup || setup->timeout_factor < 1.0f) {
+        fprintf(stderr, "INFO: Mutant timeout factor is set to 1.25.\n");
+        return 1.25f;
+    }
+    fprintf(stderr, "INFO: Mutant timeout factor is set to %f!\n", setup->timeout_factor);
+    return setup->timeout_factor;
+}
+
+uint64_t f5_get_timeout_us_extra(void)
+{
+    if (!setup || setup->timeout_us_extra == 0) {
+        fprintf(stderr, "INFO: Mutant timeout extra wait time is set to 1000 us.\n");
+        return 1000LL;
+    }
+    fprintf(stderr, "INFO: Mutant timeout extra wait time is set to %ld!\n", setup->timeout_us_extra);
+    return setup->timeout_us_extra;
 }
