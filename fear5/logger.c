@@ -19,14 +19,14 @@ static const char *mutant_result_text[] = {
     "non-zero exitcode",
 };
 
-static const char *base_exceptions_text[] = {
-    "ex::INTERRUPT",
-    "ex::HLT",
-    "ex::DEBUG",
-    "ex::HALTED",
-    "ex::YIELD",
-    "ex::ATOMIC",
-};
+// static const char *base_exceptions_text[] = {
+//     "ex::INTERRUPT",
+//     "ex::HLT",
+//     "ex::DEBUG",
+//     "ex::HALTED",
+//     "ex::YIELD",
+//     "ex::ATOMIC",
+// };
 
 static const char *riscv_exceptions_text[] = {
     "ex::INSN_MISA",
@@ -39,7 +39,7 @@ static const char *riscv_exceptions_text[] = {
     "ex::ST_AC_FLT",
     "ex::U_ECALL",
     "ex::S_ECALL",
-    "ex::__reserved__",
+    "ex::H_ECALL",
     "ex::M_ECALL",
     "ex::INSN_PG_FLT",
     "ex::LD_PG_FLT",
@@ -47,20 +47,20 @@ static const char *riscv_exceptions_text[] = {
     "ex::ST_PG_FLT",
 };
 
-static const char *riscv_interrupts_text[] = {
-    "irq::USER_SW",
-    "irq::SUPERVISOR_SW",
-    "irq::__reserved__",
-    "irq::MACHINE_SW",
-    "irq::USER_TIMER",
-    "irq::SUPERVISOR_TIMER",
-    "irq::__reserved__",
-    "irq::MACHINE_TIMER",
-    "irq::USER_EXTERN",
-    "irq::SUPERVISOR_EXTERN",
-    "irq::__reserved__",
-    "irq::MACHINE_EXTERN",
-};
+// static const char *riscv_interrupts_text[] = {
+//     "irq::USER_SW",
+//     "irq::SUPERVISOR_SW",
+//     "irq::__reserved__",
+//     "irq::MACHINE_SW",
+//     "irq::USER_TIMER",
+//     "irq::SUPERVISOR_TIMER",
+//     "irq::__reserved__",
+//     "irq::MACHINE_TIMER",
+//     "irq::USER_EXTERN",
+//     "irq::SUPERVISOR_EXTERN",
+//     "irq::__reserved__",
+//     "irq::MACHINE_EXTERN",
+// };
 
 void fi_set_logfile(const char *path) {
 	if (path != NULL) {
@@ -114,54 +114,54 @@ void fi_log_mutant(uint64_t time, uint64_t time_max, uint32_t code) {
 	int dTim = floor(log10((float) time_max)) + 1;
 
     const char *txt = "__unknown__";
-    switch (code & 0xF00000) {
-        case EXCEPTION:
-            if ((code & 0xFFFFF) <= 0xF) {
-                txt = riscv_exceptions_text[code & 0xF];
-            } else {
-                txt = base_exceptions_text[code & 0xF];
-            }
-            break;
-        case MISSING_EXT:
-            switch (code & 0xFFFFF) {
-                case (1 << 0):
-                    txt = "MISSING_EXT_RVA";
-                    break;
-                case (1 << 2):
-                    txt = "MISSING_EXT_RVC";
-                    break;
-                case (1 << 3):
-                    txt = "MISSING_EXT_RVD";
-                    break;
-                case (1 << 5):
-                    txt = "MISSING_EXT_RVF";
-                    break;
-                case (1 << 12):
-                    txt = "MISSING_EXT_RVM";
-                    break;
-            }
-            break;
-        default:
-            if (code & 0x10000000) {
-                uint32_t exception_code = code & 0x0FFFFFFF;
-                if (code & 0x80000000) {
-                    if (exception_code > 11) {
-                        txt = "irq::__reserved__";
-                    } else {
-                        txt = riscv_interrupts_text[exception_code];
-                    }
-                } else {
-                    if (exception_code > 15) {
-                        txt = "ex::__reserved__";
-                    } else {
+    // switch (code & 0xF00000) {
+    //     case EXCEPTION:
+    //         if ((code & 0xFFFFF) <= 0xF) {
+    //             txt = riscv_exceptions_text[code & 0xF];
+    //         } else {
+    //             txt = base_exceptions_text[code & 0xF];
+    //         }
+    //         break;
+    //     case MISSING_EXT:
+    //         switch (code & 0xFFFFF) {
+    //             case (1 << 0):
+    //                 txt = "MISSING_EXT_RVA";
+    //                 break;
+    //             case (1 << 2):
+    //                 txt = "MISSING_EXT_RVC";
+    //                 break;
+    //             case (1 << 3):
+    //                 txt = "MISSING_EXT_RVD";
+    //                 break;
+    //             case (1 << 5):
+    //                 txt = "MISSING_EXT_RVF";
+    //                 break;
+    //             case (1 << 12):
+    //                 txt = "MISSING_EXT_RVM";
+    //                 break;
+    //         }
+    //         break;
+    //     default:
+            if (code & EXCEPTION) {
+                uint32_t exception_code = code & 0x0000000F;
+                // if (code & 0x80000000) {
+                //     if (exception_code > 11) {
+                //         txt = "irq::__reserved__";
+                //     } else {
+                //         txt = riscv_interrupts_text[exception_code];
+                //     }
+                // } else {
+                //     if (exception_code > 15) {
+                //         txt = "ex::__reserved__";
+                //     } else {
                         txt = riscv_exceptions_text[exception_code];
-                    }
-                }
+                //     }
+                // }
             } else {
-                txt = mutant_result_text[code >> 20];
+                txt = mutant_result_text[code];
             }
-            break;
-    }
+    //         break;
+    // }
 
     fprintf(logfile, "     %0*d, %22s, %*"PRIu64" us\n",
             dIdx, FEAR5_CURRENT->id,

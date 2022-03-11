@@ -88,15 +88,15 @@ typedef struct MemStimulator {
 } MemStimulator;
 
 enum MutantResult {
-    NOT_KILLED         = 0x000000,
-    OUTPUT_DEVIATION   = 0x100000,
-    TIMEOUT            = 0x200000,
-    EXCEPTION          = 0x300000,
-    UNKNOWN            = 0x400000,
-    INTERRUPT          = 0x500000,
-    MISSING_EXT        = 0x600000,
-    EXIT_FAIL          = 0x700000,
-    EXIT_TRAP          = 0x10000000,
+    NOT_KILLED         = 0x00000000,
+    OUTPUT_DEVIATION   = 0x00000001,
+    TIMEOUT            = 0x00000002,
+    EXCEPTION          = 0x10000000,
+    // UNKNOWN            = 0x400000,
+    // INTERRUPT          = 0x500000,
+    // MISSING_EXT        = 0x600000,
+    EXIT_FAIL          = 0x00000007,
+    // EXIT_TRAP          = 0x10000000,
 };
 
 #define FEAR5_CURRENT ((setup && setup->m_index < setup->m_count) ? &(setup->current) : NULL)
