@@ -1938,7 +1938,7 @@ static RISCVException riscv_csrrw_do64(CPURISCVState *env, int csrno,
     Mutant* m = FEAR5_CURRENT;
     if (m && m->addr_reg_mem == csrno) {
         if (m->kind == CSR_PERMANENT ||
-            (m->kind == CSR_TRANSIENT && m->nr_access == f5->csr[csrno].r)) {
+            (m->kind == CSR_TRANSIENT && m->nr_access == (f5->csr[csrno].r + f5->csr[csrno].w))) {
             old_value ^= m->biterror;
         } else if (m->kind == CSR_STUCK_AT_ZERO) {
             old_value &= ~(m->biterror);
@@ -1955,10 +1955,22 @@ static RISCVException riscv_csrrw_do64(CPURISCVState *env, int csrno,
     if (write_mask) {
         new_value = (old_value & ~write_mask) | (new_value & write_mask);
         if (csr_ops[csrno].write) {
-            ret = csr_ops[csrno].write(env, csrno, new_value);
 #ifdef CONFIG_FEAR5
             f5->csr[csrno].w++;
+
+            Mutant* m = FEAR5_CURRENT;
+            if (m && m->addr_reg_mem == csrno) {
+                if (m->kind == CSR_PERMANENT ||
+                    (m->kind == CSR_TRANSIENT && m->nr_access == (f5->csr[csrno].r + f5->csr[csrno].w))) {
+                    new_value ^= m->biterror;
+                } else if (m->kind == CSR_STUCK_AT_ZERO) {
+                    new_value &= ~(m->biterror);
+                } else if (m->kind == CSR_STUCK_AT_ONE) {
+                    new_value |= m->biterror;
+                }
+            }
 #endif
+            ret = csr_ops[csrno].write(env, csrno, new_value);
             if (ret != RISCV_EXCP_NONE) {
                 return ret;
             }
