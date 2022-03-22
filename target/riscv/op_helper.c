@@ -321,10 +321,8 @@ target_ulong helper_f5_mutate_gpr(target_ulong idx, target_ulong reg)
     return reg;
 }
 
-void helper_f5_trace_load(target_ulong base, target_ulong offset)
+void helper_f5_trace_load(target_ulong address)
 {
-    target_ulong address = base + offset;
-
     /* Update load counter */
     Fear5ReadWriteCounter *mem = g_hash_table_lookup(f5->mem, GUINT_TO_POINTER(address));
     if (mem == NULL) {
@@ -334,10 +332,8 @@ void helper_f5_trace_load(target_ulong base, target_ulong offset)
     mem->r++;
 }
 
-void helper_f5_trace_store(target_ulong base, target_ulong offset)
+void helper_f5_trace_store(target_ulong address)
 {
-    target_ulong address = base + offset;
-
     /* Update store counter */
     Fear5ReadWriteCounter *mem = g_hash_table_lookup(f5->mem, GUINT_TO_POINTER(address));
     if (mem == NULL) {

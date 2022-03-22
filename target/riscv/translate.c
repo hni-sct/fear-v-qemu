@@ -270,9 +270,11 @@ static TCGv temp_new(DisasContext *ctx)
 static void _f5_trace_gpr_read(int reg_num)
 {
 #ifdef CONFIG_FEAR5
-    TCGv idx = tcg_const_tl(reg_num);
-    gen_helper_f5_trace_gpr_read(idx);
-    tcg_temp_free(idx);
+    if (qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN)) {
+        TCGv idx = tcg_const_tl(reg_num);
+        gen_helper_f5_trace_gpr_read(idx);
+        tcg_temp_free(idx);
+    }
 #endif
 }
 
@@ -357,9 +359,11 @@ static TCGv dest_gprh(DisasContext *ctx, int reg_num)
 static void _f5_trace_gpr_write(int reg_num)
 {
 #ifdef CONFIG_FEAR5
-    TCGv idx = tcg_const_tl(reg_num);
-    gen_helper_f5_trace_gpr_write(idx);
-    tcg_temp_free(idx);
+    if (qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN)) {
+        TCGv idx = tcg_const_tl(reg_num);
+        gen_helper_f5_trace_gpr_write(idx);
+        tcg_temp_free(idx);
+    }
 #endif
 }
 
