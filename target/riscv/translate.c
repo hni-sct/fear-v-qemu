@@ -278,9 +278,27 @@ static void _f5_trace_gpr_read(int reg_num)
 #endif
 }
 
+static void _f5_mutate_gpr_permanent(int reg_num) {
+    Mutant* m = FEAR5_CURRENT;
+    if (m && m->addr_reg_mem == reg_num) {
+
+        switch(m->kind) {
+            case GPR_PERMANENT:
+                tcg_gen_xori_tl(cpu_gpr[reg_num], cpu_gpr[reg_num], m->biterror);
+                break;
+            case GPR_STUCK_AT_ZERO:
+                tcg_gen_andi_tl(cpu_gpr[reg_num], cpu_gpr[reg_num], ~(m->biterror));
+                break;
+            case GPR_STUCK_AT_ONE:
+                tcg_gen_ori_tl(cpu_gpr[reg_num], cpu_gpr[reg_num], m->biterror);
+                break;
+        }
+    }
+}
+
 static TCGv get_gpr(DisasContext *ctx, int reg_num, DisasExtend ext)
 {
-    TCGv t, idx;
+    TCGv t;
 
     if (reg_num == 0) {
         return ctx->zero;
@@ -289,25 +307,21 @@ static TCGv get_gpr(DisasContext *ctx, int reg_num, DisasExtend ext)
     _f5_trace_gpr_read(reg_num);
     switch (get_ol(ctx)) {
     case MXL_RV32:
+#ifdef CONFIG_FEAR5
+        _f5_mutate_gpr_permanent(reg_num);
+        // idx = tcg_const_tl(reg_num);
+        // gen_helper_f5_mutate_gpr(cpu_gpr[reg_num], idx, cpu_gpr[reg_num]);
+        // tcg_temp_free(idx);
+#endif
         switch (ext) {
         case EXT_NONE:
             break;
         case EXT_SIGN:
             t = temp_new(ctx);
-#ifdef CONFIG_FEAR5
-            idx = tcg_const_tl(reg_num);
-            gen_helper_f5_mutate_gpr(cpu_gpr[reg_num], idx, cpu_gpr[reg_num]);
-            tcg_temp_free(idx);
-#endif
             tcg_gen_ext32s_tl(t, cpu_gpr[reg_num]);
             return t;
         case EXT_ZERO:
             t = temp_new(ctx);
-#ifdef CONFIG_FEAR5
-            idx = tcg_const_tl(reg_num);
-            gen_helper_f5_mutate_gpr(cpu_gpr[reg_num], idx, cpu_gpr[reg_num]);
-            tcg_temp_free(idx);
-#endif
             tcg_gen_ext32u_tl(t, cpu_gpr[reg_num]);
             return t;
         default:
@@ -320,15 +334,7 @@ static TCGv get_gpr(DisasContext *ctx, int reg_num, DisasExtend ext)
     default:
         g_assert_not_reached();
     }
-#ifdef CONFIG_FEAR5
-    t = temp_new(ctx);
-    idx = tcg_const_tl(reg_num);
-    gen_helper_f5_mutate_gpr(t, idx, cpu_gpr[reg_num]);
-    tcg_temp_free(idx);
-    return t;
-#else
     return cpu_gpr[reg_num];
-#endif
 }
 
 static TCGv get_gprh(DisasContext *ctx, int reg_num)
@@ -369,17 +375,17 @@ static void _f5_trace_gpr_write(int reg_num)
 
 static void gen_set_gpr(DisasContext *ctx, int reg_num, TCGv t)
 {
-    TCGv idx;
     if (reg_num != 0) {
         _f5_trace_gpr_write(reg_num);
         switch (get_ol(ctx)) {
         case MXL_RV32:
-#ifdef CONFIG_FEAR5
-            idx = tcg_const_tl(reg_num);
-            gen_helper_f5_mutate_gpr(t, idx, t);
-            tcg_temp_free(idx);
-#endif
             tcg_gen_ext32s_tl(cpu_gpr[reg_num], t);
+#ifdef CONFIG_FEAR5
+            _f5_mutate_gpr_permanent(reg_num);
+            // idx = tcg_const_tl(reg_num);
+            // gen_helper_f5_mutate_gpr(t, idx, t);
+            // tcg_temp_free(idx);
+#endif
             break;
         case MXL_RV64:
         case MXL_RV128:
@@ -402,6 +408,12 @@ static void gen_set_gpri(DisasContext *ctx, int reg_num, target_long imm)
         switch (get_ol(ctx)) {
         case MXL_RV32:
             tcg_gen_movi_tl(cpu_gpr[reg_num], (int32_t)imm);
+#ifdef CONFIG_FEAR5
+            _f5_mutate_gpr_permanent(reg_num);
+            // idx = tcg_const_tl(reg_num);
+            // gen_helper_f5_mutate_gpr(t, idx, t);
+            // tcg_temp_free(idx);
+#endif
             break;
         case MXL_RV64:
         case MXL_RV128:
