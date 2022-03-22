@@ -8,49 +8,8 @@ Fear5State *f5;
 
 TestSetup *setup;
 
-static QEMUTimer *timer = NULL;
-static int64_t tStart;
-static uint64_t runTimeMax;
-
-static void timeout(void *opaque)
-{
-    fear5_kill_mutant(TIMEOUT);
-}
-
-void fi_reset_state(void) {
-    memset(f5->gpr, 0, 32*sizeof(Fear5ReadWriteCounter));
-    memset(f5->csr, 0, 4096*sizeof(Fear5ReadWriteCounter));
-    g_hash_table_remove_all(f5->mem);
-    g_hash_table_remove_all(f5->tb);
-
-    //    qemu_fi_monitors_reset();
-    if (setup && setup->monitors) {
-        GList *values = g_hash_table_get_values(setup->monitors);
-        for (int i = 0; i < g_list_length(values); i++) {
-            MemMonitor *m = g_list_nth_data(values, i);
-            m->pos = 0;
-        }
-    }
-
-    //    qemu_fi_stimulators_reset();
-    if (setup && setup->stimulators) {
-        GList *values = g_hash_table_get_values(setup->stimulators);
-        for (int i = 0; i < g_list_length(values); i++) {
-            MemStimulator *s = g_list_nth_data(values, i);
-            s->pos = 0;
-        }
-    }
-
-    tStart = qemu_clock_get_us(QEMU_CLOCK_VIRTUAL);
-
-    if (timer && f5->phase == MUTANT) {
-        timer_mod(timer, tStart + runTimeMax);
-    }
-}
-
 void fear5_init(void) {
     fi_log_header();
-    timer = timer_new_us(QEMU_CLOCK_VIRTUAL, timeout, NULL);
 }
 
 static void get_pc_exe(gpointer item, gpointer user) {
@@ -139,11 +98,7 @@ static void qemu_fi_exit(int i, const char *t) {
 
 void fear5_kill_mutant(uint32_t code) {
 
-	if (timer) {
-		timer_del(timer);
-	}
-
-    /* Check if golden run contains errors
+	/* Check if golden run contains errors
        Note: "NOT_KILLED" is the exitcode without any known faulty behaviour. */
     if (f5->phase == GOLDEN_RUN && code != NOT_KILLED) {
         qemu_fi_exit(1, "ERROR: Golden Run has errors! Fix this or use another test program.");
@@ -154,36 +109,9 @@ void fear5_kill_mutant(uint32_t code) {
         qemu_fi_exit(0, NULL);
     }
 
-    int64_t tEnd = qemu_clock_get_us(QEMU_CLOCK_VIRTUAL);
-    uint64_t runTime = (tEnd < tStart) ? (-tStart-tEnd) : (tEnd-tStart);
+    f5->next_code = code;
 
-    if (f5->phase == GOLDEN_RUN) {
-        runTimeMax = (f5_get_timeout_factor() * runTime) + f5_get_timeout_us_extra();
-        fi_log_goldenrun(runTime, runTimeMax);
-    } else if (f5->phase == MUTANT) {
-        fi_log_mutant(runTime, runTimeMax, code);
-    }
-
-    // Try to select the next mutant...
-    if (!FEAR5_COUNT || fear5_gotonext_mutant()) {
-        // Quit QEMU if no further mutants available
-        fi_log_footer();
-        qemu_fi_exit(0, NULL);
-    }
-
-    // Reset all CPUs
-    CPUState *cpu;
-    CPU_FOREACH(cpu) {
-
-        // Open question: should the TB flush be done here or better during
-        //                the reset of the terminator device?
-        tb_flush(cpu);
-        // Same here: should we update the phase here or during QOM reset?
-        f5->phase = MUTANT;
-        
-        // Request reset: this has to be asynchronous to make the timeout work properly!
-        qemu_system_reset_request(SHUTDOWN_CAUSE_GUEST_RESET);
-    }
+    qemu_system_reset_request(SHUTDOWN_CAUSE_GUEST_RESET);
 
 }
 
@@ -218,19 +146,33 @@ void fear5_printtime(const char* prefix)
 float f5_get_timeout_factor(void)
 {
     if (!setup || setup->timeout_factor < 1.0f) {
-        fprintf(stderr, "INFO: Mutant timeout factor is set to 1.25.\n");
+        fprintf(stderr, "INFO: Mutant timeout factor is set to default value 1.25f.\n");
         return 1.25f;
     }
-    fprintf(stderr, "INFO: Mutant timeout factor is set to %f!\n", setup->timeout_factor);
+    // fprintf(stderr, "INFO: Mutant timeout factor is set to %f!\n", setup->timeout_factor);
     return setup->timeout_factor;
 }
 
 uint64_t f5_get_timeout_us_extra(void)
 {
     if (!setup || setup->timeout_us_extra == 0) {
-        fprintf(stderr, "INFO: Mutant timeout extra wait time is set to 1000 us.\n");
+        fprintf(stderr, "INFO: Mutant timeout extra wait time is set to default value 1000 us.\n");
         return 1000LL;
     }
-    fprintf(stderr, "INFO: Mutant timeout extra wait time is set to %ld!\n", setup->timeout_us_extra);
+    // fprintf(stderr, "INFO: Mutant timeout extra wait time is set to %ld!\n", setup->timeout_us_extra);
     return setup->timeout_us_extra;
 }
+
+// static QemuRecMutex f5_mutex;
+
+// void f5_mutex_init(void) {
+//     qemu_rec_mutex_init(&f5_mutex);
+// }
+
+// void f5_mutex_lock(void) {
+//     qemu_rec_mutex_lock(&f5_mutex);
+// }
+
+// void f5_mutex_unlock(void) {
+//     qemu_rec_mutex_unlock(&f5_mutex);
+// }

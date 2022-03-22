@@ -100,6 +100,10 @@ void fi_log_header(void) {
 }
 
 void fi_log_footer(void) {
+    if (logfile == NULL) {
+        logfile = stderr;
+    }
+
 	fprintf(logfile, "#   Mutation testing finished. Simulated %d mutants.\n", FEAR5_COUNT);
     fprintf(logfile, "#   TO DO: Footer with statistics and stuff like that...\n");
 
@@ -115,9 +119,13 @@ void fi_log_footer(void) {
 }
 
 void fi_log_goldenrun(uint64_t time, uint64_t time_max) {
-	int dIdx = (FEAR5_COUNT > 0) ? floor(log10((float) FEAR5_COUNT)) + 1 : 1;
-	int dTim = floor(log10((float) time_max)) + 1;
+    if (logfile == NULL) {
+        logfile = stderr;
+    }
 
+	int dIdx = (FEAR5_COUNT > 0) ? floor(log10((float) FEAR5_COUNT)) + 1 : 1;
+    int dTim = floor(log10((float) time_max)) + 1;
+    
     fprintf(logfile, "#   Golden run took %"PRIu64" us to complete...\n", time);
     fprintf(logfile, "#    -> Mutants will timeout after %"PRIu64" us.\n#\n", time_max);
     fprintf(logfile, "#   TO DO: Display invocation parameters...\n#\n");
@@ -126,6 +134,10 @@ void fi_log_goldenrun(uint64_t time, uint64_t time_max) {
 }
 
 void fi_log_mutant(uint64_t time, uint64_t time_max, uint32_t code) {
+    if (logfile == NULL) {
+        logfile = stderr;
+    }
+    
 	int dIdx = (FEAR5_COUNT > 0) ? floor(log10((float) FEAR5_COUNT)) + 1 : 1;
 	int dTim = floor(log10((float) time_max)) + 1;
 

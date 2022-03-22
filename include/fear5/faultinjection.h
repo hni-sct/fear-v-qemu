@@ -16,8 +16,9 @@
 //#define FEAR5_TIME_MEASUREMENT
 
 enum Fear5TestPhase {
-    GOLDEN_RUN = 0,
-    MUTANT = 1,
+    PRE_INIT = 0,
+    GOLDEN_RUN = 1,
+    MUTANT = 2,
 };
 
 typedef struct Fear5TbExecCounter {
@@ -36,6 +37,7 @@ typedef struct Fear5State {
     Fear5ReadWriteCounter csr[4096];
     GHashTable *mem;
     GHashTable *tb;
+    uint32_t next_code;
 } Fear5State;
 
 enum MutantType {
@@ -118,5 +120,9 @@ void fear5_printtime(const char* prefix);
 
 float f5_get_timeout_factor(void);
 uint64_t f5_get_timeout_us_extra(void);
+
+// void f5_mutex_init(void);
+// void f5_mutex_lock(void);
+// void f5_mutex_unlock(void);
 
 #endif /* FAULTINJECTION_H_ */
