@@ -36,6 +36,16 @@ static gint compare(gconstpointer item1, gconstpointer item2) {
     return 0;
 }
 
+static inline void log_mem_stats(GHashTable *ht, const char *prefix)
+{
+    GList *k2 = g_list_sort(g_hash_table_get_keys(ht), compare);
+    while(k2) {
+        Fear5ReadWriteCounter *mem = g_hash_table_lookup(ht, k2->data);
+        qemu_log("%s[" TARGET_FMT_lx "]:%" PRIu64 ",%" PRIu64 ",%" PRIu64 "\n", prefix, GPOINTER_TO_UINT(k2->data), mem->r, mem->w, (mem->r + mem->w));
+        k2 = k2->next;
+    }
+}
+
 static void qemu_fi_exit(int i, const char *t) {
 
     /* Compact golden run statistics... */
@@ -76,13 +86,9 @@ static void qemu_fi_exit(int i, const char *t) {
         /* Output MEM Accesses (R/W/Total) */
         qemu_log("\nMemory executions <#reads, #writes, #total>:\n");
         qemu_log("--------------------------------------------------------------------------------\n");
-        GList *k2 = g_list_sort(g_hash_table_get_keys(f5->mem), compare);
-        while(k2) {
-            Fear5ReadWriteCounter *mem = g_hash_table_lookup(f5->mem, k2->data);
-            qemu_log("MEMORY[" TARGET_FMT_lx "]:%" PRIu64 ",%" PRIu64 ",%" PRIu64 "\n", GPOINTER_TO_UINT(k2->data), mem->r, mem->w, (mem->r + mem->w));
-            k2 = k2->next;
-        }
-
+        log_mem_stats(f5->mem8,  "MEM_8");
+        log_mem_stats(f5->mem16, "MEM_16");
+        log_mem_stats(f5->mem32, "MEM_32");
         qemu_log("--------------------------------------------------------------------------------\n");
     }
 

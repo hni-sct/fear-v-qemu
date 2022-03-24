@@ -239,7 +239,9 @@ static bool gen_load_tl(DisasContext *ctx, arg_lb *a, MemOp memop)
         //TCGv base = cpu_gpr[a->rs1];
         //TCGv offset = tcg_const_tl(a->imm);
         //gen_helper_f5_trace_mem_filter(idx, base, offset);
-        gen_helper_f5_trace_load(addr);
+        TCGv mop = tcg_const_tl(memop);
+        gen_helper_f5_trace_load(addr, mop);
+        tcg_temp_free(mop);
         //tcg_temp_free(idx);
         //tcg_temp_free(offset);
     }
@@ -354,7 +356,9 @@ static bool gen_store_tl(DisasContext *ctx, arg_sb *a, MemOp memop)
         //TCGv base = cpu_gpr[a->rs1];
         //TCGv offset = tcg_const_tl(a->imm);
         //gen_helper_f5_trace_mem_filter(idx, base, offset);
-        gen_helper_f5_trace_store(addr);
+        TCGv mop = tcg_const_tl(memop);
+        gen_helper_f5_trace_store(addr, mop);
+        tcg_temp_free(mop);
         //tcg_temp_free(idx);
         //tcg_temp_free(offset);
     }

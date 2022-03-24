@@ -164,7 +164,9 @@ static void terminator_reset_exit(Object *obj)
     memset(f5->gpr, 0, 32*sizeof(Fear5ReadWriteCounter));
     memset(f5->csr, 0, 4096*sizeof(Fear5ReadWriteCounter));
     // f5_mutex_lock();
-    g_hash_table_remove_all(f5->mem);
+    g_hash_table_remove_all(f5->mem8);
+    g_hash_table_remove_all(f5->mem16);
+    g_hash_table_remove_all(f5->mem32);
     // f5_mutex_unlock();
     g_hash_table_remove_all(f5->tb);
 

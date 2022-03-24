@@ -49,25 +49,41 @@ target_ulong helper_f5_mutate_gpr(target_ulong idx, target_ulong reg)
     return reg;
 }
 
-void helper_f5_trace_load(target_ulong address)
+static inline GHashTable *get_memx_htable(MemOp op)
 {
-    /* Update load counter */
-    Fear5ReadWriteCounter *mem = g_hash_table_lookup(f5->mem, GUINT_TO_POINTER(address));
-    if (mem == NULL) {
-        mem = g_new0(Fear5ReadWriteCounter, 1);
-        g_hash_table_insert(f5->mem, GUINT_TO_POINTER(address), mem);
+    switch (op & MO_SIZE) {
+        case MO_8:
+            return f5->mem8;
+        case MO_16:
+            return f5->mem16;
+        case MO_32:
+            return f5->mem32;
     }
+    g_assert_not_reached();
+    return NULL;
+}
+
+static inline Fear5ReadWriteCounter *get_memx_counter_from_htable(GHashTable *ht, target_ulong addr)
+{
+    Fear5ReadWriteCounter *ctr = g_hash_table_lookup(ht, GUINT_TO_POINTER(addr));
+    if (ctr == NULL) {
+        ctr = g_new0(Fear5ReadWriteCounter, 1);
+        g_hash_table_insert(ht, GUINT_TO_POINTER(addr), ctr);
+    }
+    return ctr;
+}
+
+void helper_f5_trace_load(target_ulong address, target_ulong mop)
+{
+    /* Split-up tracing by Memory Operation size */
+    Fear5ReadWriteCounter *mem = get_memx_counter_from_htable(get_memx_htable(mop), address);
     mem->r++;
 }
 
-void helper_f5_trace_store(target_ulong address)
+void helper_f5_trace_store(target_ulong address, target_ulong mop)
 {
-    /* Update store counter */
-    Fear5ReadWriteCounter *mem = g_hash_table_lookup(f5->mem, GUINT_TO_POINTER(address));
-    if (mem == NULL) {
-        mem = g_new0(Fear5ReadWriteCounter, 1);
-        g_hash_table_insert(f5->mem, GUINT_TO_POINTER(address), mem);
-    }
+    /* Split-up tracing by Memory Operation size */
+    Fear5ReadWriteCounter *mem = get_memx_counter_from_htable(get_memx_htable(mop), address);
     mem->w++;
 }
 

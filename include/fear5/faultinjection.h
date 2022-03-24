@@ -35,7 +35,9 @@ typedef struct Fear5State {
     enum Fear5TestPhase phase;
     Fear5ReadWriteCounter gpr[32];
     Fear5ReadWriteCounter csr[4096];
-    GHashTable *mem;
+    GHashTable *mem8;
+    GHashTable *mem16;
+    GHashTable *mem32;
     GHashTable *tb;
     uint32_t next_code;
 } Fear5State;
