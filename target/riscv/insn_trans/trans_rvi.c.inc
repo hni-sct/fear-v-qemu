@@ -228,13 +228,14 @@ static bool gen_load_tl(DisasContext *ctx, arg_lb *a, MemOp memop)
     TCGv dest = dest_gpr(ctx, a->rd);
     TCGv addr = get_address(ctx, a->rs1, a->imm);
 
+    tcg_gen_qemu_ld_tl(dest, addr, ctx->mem_idx, memop);
 #ifdef CONFIG_FEAR5
     /*
       - Record memory address "cpu_gpr[a->rs1] + a->imm"
       - This memory access can be filtered during mutant generation
         if the mutated address is invalid.
     */
-    if (qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN)) {
+    if (unlikely(qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN))) {
         //TCGv idx = tcg_const_tl(a->rs1);
         //TCGv base = cpu_gpr[a->rs1];
         //TCGv offset = tcg_const_tl(a->imm);
@@ -244,10 +245,15 @@ static bool gen_load_tl(DisasContext *ctx, arg_lb *a, MemOp memop)
         tcg_temp_free(mop);
         //tcg_temp_free(idx);
         //tcg_temp_free(offset);
+    } else if (f5->phase == MUTANT) {
+        Mutant* m = FEAR5_CURRENT;
+        if (unlikely(m && (m->kind == DMEM_PERMANENT || m->kind == DMEM_STUCK_AT_ZERO || m->kind == DMEM_STUCK_AT_ONE))) {
+            TCGv mop = tcg_const_tl(memop);
+            gen_helper_f5_mutate_memop(dest, dest, addr, mop);
+            tcg_temp_free(mop);
+        }
     }
-#endif
-
-    tcg_gen_qemu_ld_tl(dest, addr, ctx->mem_idx, memop);
+#endif    
     gen_set_gpr(ctx, a->rd, dest);
     return true;
 }
@@ -351,7 +357,7 @@ static bool gen_store_tl(DisasContext *ctx, arg_sb *a, MemOp memop)
       - This memory access can be filtered during mutant generation
         if the mutated address is invalid.
     */
-    if (qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN)) {
+    if (unlikely(qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN))) {
         //TCGv idx = tcg_const_tl(a->rs1);
         //TCGv base = cpu_gpr[a->rs1];
         //TCGv offset = tcg_const_tl(a->imm);
@@ -361,9 +367,15 @@ static bool gen_store_tl(DisasContext *ctx, arg_sb *a, MemOp memop)
         tcg_temp_free(mop);
         //tcg_temp_free(idx);
         //tcg_temp_free(offset);
+    } else if (f5->phase == MUTANT) {
+        Mutant* m = FEAR5_CURRENT;
+        if (unlikely(m && (m->kind == DMEM_PERMANENT || m->kind == DMEM_STUCK_AT_ZERO || m->kind == DMEM_STUCK_AT_ONE))) {
+            TCGv mop = tcg_const_tl(memop);
+            gen_helper_f5_mutate_memop(data, data, addr, mop);
+            tcg_temp_free(mop);
+        }
     }
-#endif
-
+#endif  
     tcg_gen_qemu_st_tl(data, addr, ctx->mem_idx, memop);
     return true;
 }

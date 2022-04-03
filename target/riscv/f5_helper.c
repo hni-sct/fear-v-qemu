@@ -34,20 +34,20 @@ void helper_f5_trace_gpr_write(target_ulong idx)
     f5->gpr[idx].w++;
 }
 
-target_ulong helper_f5_mutate_gpr(target_ulong idx, target_ulong reg)
-{
-    Mutant* m = FEAR5_CURRENT;
-    if (m && m->addr_reg_mem == idx) {
-        if (m->kind == GPR_PERMANENT || (m->kind == GPR_TRANSIENT && m->nr_access == (f5->gpr[idx].r + f5->gpr[idx].w))) {
-            reg ^= m->biterror;
-        } else if (m->kind == GPR_STUCK_AT_ZERO) {
-            reg &= ~(m->biterror);
-        } else if (m->kind == GPR_STUCK_AT_ONE) {
-            reg |= m->biterror;
-        }
-    }
-    return reg;
-}
+// target_ulong helper_f5_mutate_gpr(target_ulong idx, target_ulong reg)
+// {
+//     Mutant* m = FEAR5_CURRENT;
+//     if (m && m->addr_reg_mem == idx) {
+//         if (m->kind == GPR_PERMANENT || (m->kind == GPR_TRANSIENT && m->nr_access == (f5->gpr[idx].r + f5->gpr[idx].w))) {
+//             reg ^= m->biterror;
+//         } else if (m->kind == GPR_STUCK_AT_ZERO) {
+//             reg &= ~(m->biterror);
+//         } else if (m->kind == GPR_STUCK_AT_ONE) {
+//             reg |= m->biterror;
+//         }
+//     }
+//     return reg;
+// }
 
 static inline GHashTable *get_memx_htable(MemOp op)
 {
@@ -85,6 +85,42 @@ void helper_f5_trace_store(target_ulong address, target_ulong mop)
     /* Split-up tracing by Memory Operation size */
     Fear5ReadWriteCounter *mem = get_memx_counter_from_htable(get_memx_htable(mop), address);
     mem->w++;
+}
+
+target_ulong helper_f5_mutate_memop(target_ulong reg, target_ulong address, target_ulong mop)
+{
+    Mutant* m = FEAR5_CURRENT;
+    // if (m && (m->kind == DMEM_PERMANENT || m->kind == DMEM_STUCK_AT_ZERO || m->kind == DMEM_STUCK_AT_ONE)) {
+
+        unsigned s = memop_size(mop);
+        
+        if (unlikely(m->addr_reg_mem >= address && m->addr_reg_mem < address + s)) {
+            target_ulong e = m->biterror;
+            unsigned offset = m->addr_reg_mem - address;
+            switch(offset) {
+                case 1:
+                    e <<= 8;
+                    break;
+                case 2:
+                    e <<= 16;
+                    break;
+                case 3:
+                    e <<= 24;
+                    break;
+            }
+
+            switch(m->kind) {
+                case DMEM_PERMANENT:
+                    return reg ^= e;
+                case DMEM_STUCK_AT_ZERO:
+                    return reg &= ~e;
+                case DMEM_STUCK_AT_ONE:
+                    return reg |= e;
+            }
+        }
+    // }
+    // Do not mutate otherwise
+    return reg;
 }
 
 // void helper_f5_trace_mem_filter(target_ulong idx, target_ulong base, target_ulong offset)

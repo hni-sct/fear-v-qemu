@@ -4,7 +4,7 @@
 #include "fear5/faultinjection.h"
 #include "fear5/logger.h"
 
-#define FLUSH_DIV 100
+#define FLUSH_DIV 1000
 static FILE *logfile = NULL;
 static int flush_div = 0;
 
@@ -108,7 +108,7 @@ void fi_log_footer(void) {
     fprintf(logfile, "#   TO DO: Footer with statistics and stuff like that...\n");
 
     if (logfile != stderr) {
-        fflush(logfile);
+        //fflush(logfile);
         fclose(logfile);
 
         // fprintf(stderr, "\r Successfully finished mutation test... \n");
@@ -198,7 +198,7 @@ void fi_log_mutant(uint64_t time, uint64_t time_max, uint32_t code) {
 
     flush_div = (flush_div + 1) % FLUSH_DIV;
     if (flush_div == 0) {
-        fflush(logfile);
+        //fflush(logfile);
 
         /* Display progress without too much slowdown... */
         if (logfile != stderr) {

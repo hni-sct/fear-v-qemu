@@ -270,7 +270,7 @@ static TCGv temp_new(DisasContext *ctx)
 static void _f5_trace_gpr_read(int reg_num)
 {
 #ifdef CONFIG_FEAR5
-    if (qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN)) {
+    if (unlikely(qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN))) {
         TCGv idx = tcg_const_tl(reg_num);
         gen_helper_f5_trace_gpr_read(idx);
         tcg_temp_free(idx);
@@ -365,7 +365,7 @@ static TCGv dest_gprh(DisasContext *ctx, int reg_num)
 static void _f5_trace_gpr_write(int reg_num)
 {
 #ifdef CONFIG_FEAR5
-    if (qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN)) {
+    if (unlikely(qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN))) {
         TCGv idx = tcg_const_tl(reg_num);
         gen_helper_f5_trace_gpr_write(idx);
         tcg_temp_free(idx);
@@ -1029,7 +1029,7 @@ static void riscv_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cs)
 static void riscv_tr_tb_start(DisasContextBase *db, CPUState *cpu)
 {
 #ifdef CONFIG_FEAR5
-	if (qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN)) {
+	if (unlikely(qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN))) {
 		// Create new statistics entry for this TB...
 		Fear5TbExecCounter *stats = g_new0(Fear5TbExecCounter, 1);
 		g_hash_table_insert(f5->tb, GUINT_TO_POINTER(db->pc_first), stats);
@@ -1056,7 +1056,7 @@ static void riscv_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     uint16_t opcode16 = translator_lduw(env, &ctx->base, ctx->base.pc_next);
 
 #ifdef CONFIG_FEAR5
-    if (qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN)) {
+    if (unlikely(qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN))) {
 		target_ulong *pc_old = g_new0(target_ulong, 1);
 		*pc_old = dcbase->pc_next;
 		// Add this execution to the TB-Insn-Exec Hashtable...
