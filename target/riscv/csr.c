@@ -525,6 +525,22 @@ static RISCVException read_zero(CPURISCVState *env, int csrno,
     return RISCV_EXCP_NONE;
 }
 
+#ifdef CONFIG_FEAR5
+static RISCVException read_marchid(CPURISCVState *env, int csrno,
+                                   target_ulong *val)
+{
+    *val = 0x00000001;
+    return RISCV_EXCP_NONE;
+}
+
+static RISCVException read_mimpid(CPURISCVState *env, int csrno,
+                                  target_ulong *val)
+{
+    *val = 0x20181004;
+    return RISCV_EXCP_NONE;
+}
+#endif
+
 static RISCVException read_mhartid(CPURISCVState *env, int csrno,
                                    target_ulong *val)
 {
@@ -2127,8 +2143,14 @@ riscv_csr_operations csr_ops[CSR_TABLE_SIZE] = {
 
     /* Machine Information Registers */
     [CSR_MVENDORID] = { "mvendorid", any,   read_zero    },
+#ifdef CONFIG_FEAR5
+    /* For FE300 */
+    [CSR_MARCHID]   = { "marchid",   any,   read_marchid },
+    [CSR_MIMPID]    = { "mimpid",    any,   read_mimpid  },
+#else
     [CSR_MARCHID]   = { "marchid",   any,   read_zero    },
     [CSR_MIMPID]    = { "mimpid",    any,   read_zero    },
+#endif
     [CSR_MHARTID]   = { "mhartid",   any,   read_mhartid },
 
     /* Machine Trap Setup */
@@ -2202,8 +2224,14 @@ riscv_csr_operations csr_ops[CSR_TABLE_SIZE] = {
     [CSR_MSECCFG]    = { "mseccfg",  epmp, read_mseccfg, write_mseccfg },
     [CSR_PMPCFG0]    = { "pmpcfg0",   pmp, read_pmpcfg,  write_pmpcfg  },
     [CSR_PMPCFG1]    = { "pmpcfg1",   pmp, read_pmpcfg,  write_pmpcfg  },
+#ifdef CONFIG_FEAR5
+    /* For FE300 */
+    [CSR_PMPCFG2]    = { "pmpcfg2",   pmp, read_zero  },
+    [CSR_PMPCFG3]    = { "pmpcfg3",   pmp, read_zero  },
+#else
     [CSR_PMPCFG2]    = { "pmpcfg2",   pmp, read_pmpcfg,  write_pmpcfg  },
     [CSR_PMPCFG3]    = { "pmpcfg3",   pmp, read_pmpcfg,  write_pmpcfg  },
+#endif
     [CSR_PMPADDR0]   = { "pmpaddr0",  pmp, read_pmpaddr, write_pmpaddr },
     [CSR_PMPADDR1]   = { "pmpaddr1",  pmp, read_pmpaddr, write_pmpaddr },
     [CSR_PMPADDR2]   = { "pmpaddr2",  pmp, read_pmpaddr, write_pmpaddr },
@@ -2212,6 +2240,17 @@ riscv_csr_operations csr_ops[CSR_TABLE_SIZE] = {
     [CSR_PMPADDR5]   = { "pmpaddr5",  pmp, read_pmpaddr, write_pmpaddr },
     [CSR_PMPADDR6]   = { "pmpaddr6",  pmp, read_pmpaddr, write_pmpaddr },
     [CSR_PMPADDR7]   = { "pmpaddr7",  pmp, read_pmpaddr, write_pmpaddr },
+#ifdef CONFIG_FEAR5
+    /* For FE300 */
+    [CSR_PMPADDR8]   = { "pmpaddr8",  pmp, read_zero  },
+    [CSR_PMPADDR9]   = { "pmpaddr9",  pmp, read_zero  },
+    [CSR_PMPADDR10]  = { "pmpaddr10", pmp, read_zero  },
+    [CSR_PMPADDR11]  = { "pmpaddr11", pmp, read_zero  },
+    [CSR_PMPADDR12]  = { "pmpaddr12", pmp, read_zero  },
+    [CSR_PMPADDR13]  = { "pmpaddr13", pmp, read_zero  },
+    [CSR_PMPADDR14] =  { "pmpaddr14", pmp, read_zero  },
+    [CSR_PMPADDR15] =  { "pmpaddr15", pmp, read_zero  },
+#else
     [CSR_PMPADDR8]   = { "pmpaddr8",  pmp, read_pmpaddr, write_pmpaddr },
     [CSR_PMPADDR9]   = { "pmpaddr9",  pmp, read_pmpaddr, write_pmpaddr },
     [CSR_PMPADDR10]  = { "pmpaddr10", pmp, read_pmpaddr, write_pmpaddr },
@@ -2220,6 +2259,7 @@ riscv_csr_operations csr_ops[CSR_TABLE_SIZE] = {
     [CSR_PMPADDR13]  = { "pmpaddr13", pmp, read_pmpaddr, write_pmpaddr },
     [CSR_PMPADDR14] =  { "pmpaddr14", pmp, read_pmpaddr, write_pmpaddr },
     [CSR_PMPADDR15] =  { "pmpaddr15", pmp, read_pmpaddr, write_pmpaddr },
+#endif
 
     /* User Pointer Masking */
     [CSR_UMTE]    =    { "umte",    pointer_masking, read_umte,    write_umte    },
