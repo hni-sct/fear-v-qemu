@@ -270,38 +270,43 @@ static TCGv temp_new(DisasContext *ctx)
 static void _f5_trace_gpr_read(int reg_num)
 {
 #ifdef CONFIG_FEAR5
-    // if (unlikely(qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN))) {
+    Mutant* m = FEAR5_CURRENT;
+    if (unlikely(qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN) ||
+                 (m && m->kind == GPR_TRANSIENT && m->addr_reg_mem == reg_num))) {
         TCGv idx = tcg_const_tl(reg_num);
         gen_helper_f5_trace_gpr_read(idx);
         tcg_temp_free(idx);
-    // }
+    }
 #endif
 }
 
-// static void _f5_mutate_gpr_permanent(int reg_num) {
-//     Mutant* m = FEAR5_CURRENT;
-//     if (m && m->addr_reg_mem == reg_num) {
+static void _f5_mutate_gpr(int reg_num) {
+    Mutant* m = FEAR5_CURRENT;
+    TCGv idx;
+    if (m && m->addr_reg_mem == reg_num) {
 
-//         switch(m->kind) {
-//             case GPR_PERMANENT:
-//                 tcg_gen_xori_tl(cpu_gpr[reg_num], cpu_gpr[reg_num], m->biterror);
-//                 break;
-//             case GPR_STUCK_AT_ZERO:
-//                 tcg_gen_andi_tl(cpu_gpr[reg_num], cpu_gpr[reg_num], ~(m->biterror));
-//                 break;
-//             case GPR_STUCK_AT_ONE:
-//                 tcg_gen_ori_tl(cpu_gpr[reg_num], cpu_gpr[reg_num], m->biterror);
-//                 break;
-//         }
-//     }
-// }
+        switch(m->kind) {
+            case GPR_PERMANENT:
+                tcg_gen_xori_tl(cpu_gpr[reg_num], cpu_gpr[reg_num], m->biterror);
+                break;
+            case GPR_STUCK_AT_ZERO:
+                tcg_gen_andi_tl(cpu_gpr[reg_num], cpu_gpr[reg_num], ~(m->biterror));
+                break;
+            case GPR_STUCK_AT_ONE:
+                tcg_gen_ori_tl(cpu_gpr[reg_num], cpu_gpr[reg_num], m->biterror);
+                break;
+            case GPR_TRANSIENT:
+                idx = tcg_const_tl(reg_num);
+                gen_helper_f5_mutate_gpr(cpu_gpr[reg_num], idx, cpu_gpr[reg_num]);
+                tcg_temp_free(idx);
+                break;
+        }
+    }
+}
 
 static TCGv get_gpr(DisasContext *ctx, int reg_num, DisasExtend ext)
 {
     TCGv t;
-#ifdef CONFIG_FEAR5
-    TCGv idx;
-#endif
 
     if (reg_num == 0) {
         return ctx->zero;
@@ -311,10 +316,7 @@ static TCGv get_gpr(DisasContext *ctx, int reg_num, DisasExtend ext)
     switch (get_ol(ctx)) {
     case MXL_RV32:
 #ifdef CONFIG_FEAR5
-        // _f5_mutate_gpr_permanent(reg_num);
-        idx = tcg_const_tl(reg_num);
-        gen_helper_f5_mutate_gpr(cpu_gpr[reg_num], idx, cpu_gpr[reg_num]);
-        tcg_temp_free(idx);
+        _f5_mutate_gpr(reg_num);
 #endif
         switch (ext) {
         case EXT_NONE:
@@ -368,11 +370,13 @@ static TCGv dest_gprh(DisasContext *ctx, int reg_num)
 static void _f5_trace_gpr_write(int reg_num)
 {
 #ifdef CONFIG_FEAR5
-    // if (unlikely(qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN))) {
+    Mutant* m = FEAR5_CURRENT;
+    if (unlikely(qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN) ||
+                 (m && m->kind == GPR_TRANSIENT && m->addr_reg_mem == reg_num))) {
         TCGv idx = tcg_const_tl(reg_num);
         gen_helper_f5_trace_gpr_write(idx);
         tcg_temp_free(idx);
-    // }
+    }
 #endif
 }
 
@@ -384,10 +388,7 @@ static void gen_set_gpr(DisasContext *ctx, int reg_num, TCGv t)
         case MXL_RV32:
             tcg_gen_ext32s_tl(cpu_gpr[reg_num], t);
 #ifdef CONFIG_FEAR5
-            // _f5_mutate_gpr_permanent(reg_num);
-            TCGv idx = tcg_const_tl(reg_num);
-            gen_helper_f5_mutate_gpr(cpu_gpr[reg_num], idx, cpu_gpr[reg_num]);
-            tcg_temp_free(idx);
+            _f5_mutate_gpr(reg_num);
 #endif
             break;
         case MXL_RV64:
@@ -412,10 +413,7 @@ static void gen_set_gpri(DisasContext *ctx, int reg_num, target_long imm)
         case MXL_RV32:
             tcg_gen_movi_tl(cpu_gpr[reg_num], (int32_t)imm);
 #ifdef CONFIG_FEAR5
-            // _f5_mutate_gpr_permanent(reg_num);
-            TCGv idx = tcg_const_tl(reg_num);
-            gen_helper_f5_mutate_gpr(cpu_gpr[reg_num], idx, cpu_gpr[reg_num]);
-            tcg_temp_free(idx);
+            _f5_mutate_gpr(reg_num);
 #endif
             break;
         case MXL_RV64:
