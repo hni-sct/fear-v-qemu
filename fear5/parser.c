@@ -106,7 +106,7 @@ int mutantlist_load(const char *filename)
 
 	gfile = g_file_new_for_path(filename);
 	sbase = (GInputStream *) g_file_read(gfile, NULL, NULL);
-	sdata = g_data_input_stream_new(sbase);
+	sdata = g_data_input_stream_new(g_buffered_input_stream_new(sbase));
 	assert(sdata);
 
 	// Count number of mutants...
