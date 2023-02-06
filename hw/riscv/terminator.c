@@ -79,6 +79,13 @@ static void terminator_write(void *opaque, hwaddr addr,
 
     switch (exitcode) {
     case FI_EXITCODE_NORMAL:
+        // if (f5->phase == GOLDEN_RUN && code == NOT_KILLED && FEAR5_COUNT == 0) {
+        //     // Log current state
+        //     int64_t tEnd = qemu_clock_get_us(QEMU_CLOCK_VIRTUAL);
+        //     uint64_t runTime = (tEnd < tStart) ? (-tStart-tEnd) : (tEnd-tStart);
+        //     runTimeMax = (f5_get_timeout_factor() * runTime) + f5_get_timeout_us_extra();
+        //     fi_log_goldenrun(runTime, runTimeMax);
+        // }
         return fear5_kill_mutant(NOT_KILLED);
     case FI_EXITCODE_FAIL:
         return fear5_kill_mutant(EXIT_FAIL);
@@ -189,6 +196,8 @@ static void terminator_reset_exit(Object *obj)
     }
 
     if (f5->phase == PRE_INIT) {
+        runTimeMax = (f5_get_timeout_factor() * runTime) + f5_get_timeout_us_extra();
+        fi_log_goldenrun(runTime, runTimeMax);
         f5->phase = GOLDEN_RUN;
         return;
     }
