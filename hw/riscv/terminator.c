@@ -144,6 +144,12 @@ static void terminator_reset_hold(Object *obj)
 
 static void terminator_reset_exit(Object *obj)
 {
+    // Ignore early reset...
+    if (f5->phase == PRE_INIT) {
+        f5->phase = GOLDEN_RUN;
+        return;
+    }
+
     //qemu_rec_mutex_init(m);
 
     // Terminator *s = TERMINATOR(obj);
@@ -163,6 +169,10 @@ static void terminator_reset_exit(Object *obj)
         runTimeMax = (f5_get_timeout_factor() * runTime) + f5_get_timeout_us_extra();
         fi_log_goldenrun(runTime, runTimeMax);
         f5->phase = MUTANT;
+        // Exit, if this Golden Run is not followed by any mutants:
+        if (FEAR5_COUNT == 0) {
+            qemu_fi_exit(0, NULL);
+        }
     } else if (f5->phase == MUTANT) {
         fi_log_mutant(runTime, runTimeMax, f5->next_code);
     }
@@ -193,13 +203,6 @@ static void terminator_reset_exit(Object *obj)
             MemStimulator *s = g_list_nth_data(values, i);
             s->pos = 0;
         }
-    }
-
-    if (f5->phase == PRE_INIT) {
-        runTimeMax = (f5_get_timeout_factor() * runTime) + f5_get_timeout_us_extra();
-        fi_log_goldenrun(runTime, runTimeMax);
-        f5->phase = GOLDEN_RUN;
-        return;
     }
 
     tStart = qemu_clock_get_us(QEMU_CLOCK_VIRTUAL);

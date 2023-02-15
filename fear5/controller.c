@@ -46,7 +46,7 @@ static inline void log_mem_stats(GHashTable *ht, const char *prefix)
     }
 }
 
-static void qemu_fi_exit(int i, const char *t) {
+void qemu_fi_exit(int i, const char *t) {
 
     /* Compact golden run statistics... */
     if (qemu_loglevel_mask(FEAR5_LOG_GOLDENRUN)) {
@@ -108,11 +108,6 @@ void fear5_kill_mutant(uint32_t code) {
        Note: "NOT_KILLED" is the exitcode without any known faulty behaviour. */
     if (f5->phase == GOLDEN_RUN && code != NOT_KILLED) {
         qemu_fi_exit(1, "ERROR: Golden Run has errors! Fix this or use another test program.");
-    }
-
-    if (FEAR5_COUNT == 0) {
-        //qemu_fi_exit(0, "INFO:  Golden Run finished without errors. No mutant test -> closing QEMU.");
-        qemu_fi_exit(0, NULL);
     }
 
     f5->next_code = code;
