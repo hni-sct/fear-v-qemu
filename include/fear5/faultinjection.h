@@ -130,4 +130,6 @@ uint64_t f5_get_timeout_us_extra(void);
 // void f5_mutex_lock(void);
 // void f5_mutex_unlock(void);
 
+void qemu_fi_exit(int i, const char *t);
+
 #endif /* FAULTINJECTION_H_ */
