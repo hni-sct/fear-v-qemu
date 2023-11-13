@@ -49,7 +49,12 @@ bool ebpf_rss_load(struct EBPFRSSContext *ctx)
         goto error;
     }
 
-    bpf_program__set_socket_filter(rss_bpf_ctx->progs.tun_rss_steering_prog);
+    //deprecated and no longer available in new version of the libbpf.
+    //bpf_program__set_socket_filter(rss_bpf_ctx->progs.tun_rss_steering_prog);
+    
+    //Apply the patch from official qemu repo for the deprecated 'bpf_program__set_socket_filter' function
+    //https://gitlab.com/qemu-project/qemu/-/commit/a495eba03c31c96
+    bpf_program__set_type(rss_bpf_ctx->progs.tun_rss_steering_prog, BPF_PROG_TYPE_SOCKET_FILTER);
 
     if (rss_bpf__load(rss_bpf_ctx)) {
         trace_ebpf_error("eBPF RSS", "can not load RSS program");
